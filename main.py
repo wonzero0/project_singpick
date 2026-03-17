@@ -5,11 +5,13 @@ import models
 from database import engine, get_db
 from routers import booth, users, songs, library, kiosk  # kiosk 추가
 from fastapi.staticfiles import StaticFiles
+from routers import mr
 
 # DB 테이블 생성
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()  # <-- 반드시 먼저 선언
+app.include_router(mr.router, prefix="/youtube", tags=["YouTube API"])
 
 # --- Kiosk 관련 추가 ---
 # 정적 파일 서비스 (HTML, JS 등)
