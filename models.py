@@ -8,9 +8,10 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String(50))
     phone = Column(String(255), unique=True, index=True) 
-    password = Column(String(255))       
+    password = Column(String(255))   
+    pitch = Column(String(255), nullable=True)    
 
-    remaining_songs = Column(Integer, default=0)  # ⭐ 추가                
+    remaining_songs = Column(Integer, default=0)               
 
 # 2. 노래방 부스(방) 테이블
 class Booth(Base):
