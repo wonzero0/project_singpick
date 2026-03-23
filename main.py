@@ -1,37 +1,49 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import models
 from database import engine, get_db
-from routers import booth, users, songs, library, kiosk  # kiosk 추가
+from routers import booth, users, songs, library, kiosk  # kiosk 포함
 from fastapi.staticfiles import StaticFiles
 
+# ===============================
 # DB 테이블 생성
+# ===============================
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI()  # <-- 반드시 먼저 선언
+# ===============================
+# FastAPI 앱 생성
+# ===============================
+app = FastAPI(title="SingPick Server")
 
-# --- Kiosk 관련 추가 ---
-# 정적 파일 서비스 (HTML, JS 등)
+# ===============================
+# Kiosk 관련: 정적 파일 서비스
+# ===============================
 app.mount("/kiosk_static", StaticFiles(directory="kiosk"), name="kiosk_static")
 
+# ===============================
 # CORS 설정
+# ===============================
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  
+    allow_origins=["*"],  # 모든 도메인 허용 (테스트용), 운영 시 실제 도메인만 허용
     allow_credentials=True,
-    allow_methods=["*"],  
-    allow_headers=["*"],  
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# 기존 라우터 연결
+# ===============================
+# 라우터 등록
+# ===============================
 app.include_router(users.router)
 app.include_router(booth.router)
 app.include_router(songs.router)
 app.include_router(library.router)
 app.include_router(kiosk.router)
 
-# 임시 노래 데이터 10곡 넣기
+# ===============================
+# 임시 노래 데이터 초기화 (10곡)
+# ===============================
 def init_dummy_songs(db: Session):
     if db.query(models.Song).count() == 0:
         dummy_songs = [
@@ -55,6 +67,9 @@ def on_startup():
     db = next(get_db())
     init_dummy_songs(db)
 
+# ===============================
+# 루트 경로
+# ===============================
 @app.get("/")
 def read_root():
     return {"message": "SingPick Server is Running!"}
