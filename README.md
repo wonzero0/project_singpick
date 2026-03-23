@@ -1,28 +1,28 @@
-echo # 🎤 Sing Pick! > README.md
-echo AI 기반 퍼스널 노래 추천 노래방 부스 >> README.md
-echo "당신에게 가장 잘 어울리는 한 곡을 찾아드립니다." 사용자의 음색과 음역대를 분석하여 최적의 노래를 추천하고 실시간 피드백을 제공하는 스마트 노래방 시스템입니다. >> README.md
-echo. >> README.md
-echo ## 📝 프로젝트 개요 >> README.md
-echo - **프로젝트명:** Sing Pick! >> README.md
-echo - **목표:** AI 기술을 활용한 개인 맞춤형 노래 추천 및 가창 분석 >> README.md
-echo - **기간:** 2025. 09. 01 ~ 2026. 06. 12 >> README.md
-echo - **대상:** 선곡이 어려운 분, 내 목소리에 딱 맞는 곡을 찾고 싶은 분 >> README.md
-echo. >> README.md
-echo ## 🔥 주요 기능 (Key Features) >> README.md
-echo - 🎙️ **음역대 및 음색 분석:** 사용자의 목소리를 분석하여 고유의 보컬 데이터 파악 >> README.md
-echo - 🤖 **개인 맞춤 추천:** 분석된 데이터를 바탕으로 가장 부르기 적합한 곡 매칭 >> README.md
-echo - 📊 **실시간 가창 피드백:** 음정, 박자 데이터를 분석하여 시각적인 스코어 제공 >> README.md
-echo - 📱 **QR 모바일 결과지:** 분석된 리포트를 장소에 상관없이 QR로 간편 확인 >> README.md
-echo. >> README.md
-echo ## 🛠 기술 스택 (Tech Stack) >> README.md
-echo ^| 분류 ^| 기술 ^| 상세 설명 ^| >> README.md
-echo ^| :--- ^| :--- ^| :--- ^| >> README.md
-echo ^| Backend ^| FastAPI, Uvicorn ^| 고성능 비동기 API 서버 구축 ^| >> README.md
-echo ^| AI / Analysis ^| Librosa, NumPy ^| 음성 특징 추출 및 추천 구현 ^| >> README.md
-echo ^| Database ^| MySQL ^| 사용자 데이터 및 가창 기록 관리 ^| >> README.md
-echo ^| Security ^| AES-256, JWT ^| 데이터 암호화 및 인증 보안 ^| >> README.md
-echo. >> README.md
-echo ## 👥 팀 구성 및 역할 >> README.md
-echo - **염원영:** PM / Backend / Security (프로젝트 총괄, 서버 및 보안 개발) >> README.md
-echo - **홍서현:** AI / Server Support (음성 분석, 유사도 기반 추천 시스템 개발) >> README.md
-echo - **이예원:** Frontend / Design (서비스 UI/UX 구현 및 디자인) >> README.md
+# 🎤 Sing Pick!
+AI 기반 퍼스널 노래 추천 노래방 부스
+"당신에게 가장 잘 어울리는 한 곡을 찾아드립니다." 사용자의 음색과 음역대를 분석하여 최적의 노래를 추천하고 실시간 피드백을 제공하는 스마트 노래방 시스템입니다.
+
+## 📝 프로젝트 개요
+- **프로젝트명:** Sing Pick!
+- **목표:** AI 기술을 활용한 개인 맞춤형 노래 추천 및 가창 분석
+- **기간:** 2025. 09. 01 ~ 2026. 06. 12
+- **대상:** 선곡이 어려운 분, 내 목소리에 딱 맞는 곡을 찾고 싶은 분
+
+## 🔥 주요 기능 (Key Features)
+- 🎙️ **음역대 및 음색 분석:** 사용자의 목소리를 분석하여 고유의 보컬 데이터 파악
+- 🤖 **개인 맞춤 추천:** 분석된 데이터를 바탕으로 가장 부르기 적합한 곡 매칭
+- 📊 **실시간 가창 피드백:** 음정, 박자 데이터를 분석하여 시각적인 스코어 제공
+- 📱 **QR 모바일 결과지:** 분석된 리포트를 장소에 상관없이 QR로 간편 확인
+
+## 🛠 기술 스택 (Tech Stack)
+| 분류 | 기술 | 상세 설명 |
+| :--- | :--- | :--- |
+| Backend | FastAPI, Uvicorn | 고성능 비동기 API 서버 구축 |
+| AI / Analysis | Librosa, NumPy | 음성 특징 추출 및 추천 구현 |
+| Database | MySQL | 사용자 데이터 및 가창 기록 관리 |
+| Security | AES-256, JWT | 데이터 암호화 및 인증 보안 |
+
+## 👥 팀 구성 및 역할
+- **염원영:** PM / Backend / Security (프로젝트 총괄, 서버 및 보안 개발)
+- **홍서현:** AI / Server Support (음성 분석, 유사도 기반 추천 시스템 개발)
+- **이예원:** Frontend / Design (서비스 UI/UX 구현 및 디자인)
