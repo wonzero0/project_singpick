@@ -6,23 +6,9 @@ import models
 from utils import aes_encrypt
 from typing import Optional 
 from core.auth import create_access_token, get_current_user_optional
-from passlib.context import CryptContext
+import bcrypt  # 🚨 에러투성이 passlib을 버리고 순수 bcrypt로 복구!
 
-# 서현님 로직: 안전한 비밀번호 해싱 알고리즘
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 router = APIRouter(prefix="/users", tags=["👤 Users (회원관리)"])
-
-# 비밀번호 안전하게 72바이트로 자르기 (서현님 로직)
-def truncate_password(password: str, max_bytes: int = 72) -> str:
-    encoded = password.encode('utf-8')
-    if len(encoded) <= max_bytes:
-        return password
-    truncated = encoded[:max_bytes]
-    while True:
-        try:
-            return truncated.decode('utf-8')
-        except UnicodeDecodeError:
-            truncated = truncated[:-1]
 
 # -------------------------------
 # Pydantic 모델
@@ -43,21 +29,23 @@ class UserLogin(BaseModel):
     password: str
 
 # ===============================
-# 1️⃣ 회원가입 API (통합 완료)
+# 1️⃣ 회원가입 API (순수 bcrypt로 복구)
 # ===============================
 @router.post("/signup", summary="회원가입")
 def signup(user_data: UserCreate, db: Session = Depends(get_db)):
     try:
-        # 전화번호 암호화 조회
         crypto_phone = aes_encrypt(user_data.phone)
         if db.query(models.User).filter(models.User.phone == crypto_phone).first():
             raise HTTPException(status_code=400, detail="이미 가입된 전화번호입니다.")
         
-        # 비밀번호 72바이트 자르기 & 해싱 적용 (서현님 로직 적용)
-        safe_password = truncate_password(user_data.password)
-        hashed_password = pwd_context.hash(safe_password)
+        # 원영님의 오리지널 로직: 순수 bcrypt 해싱 (버그 원천 차단)
+        password_bytes = user_data.password.encode('utf-8')
+        if len(password_bytes) > 72:  # 만약 진짜로 72바이트가 넘으면 안전하게 자르기
+            password_bytes = password_bytes[:72]
+            
+        salt = bcrypt.gensalt()
+        hashed_password = bcrypt.hashpw(password_bytes, salt).decode('utf-8')
         
-        # DB 저장
         new_user = models.User(user_id=user_data.user_id, phone=crypto_phone, password=hashed_password)
         db.add(new_user)
         db.commit()
@@ -70,30 +58,32 @@ def signup(user_data: UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 # ===============================
-# 2️⃣ 로그인 API (보안 강화 및 JWT 통합 완료)
+# 2️⃣ 로그인 API (순수 bcrypt로 복구)
 # ===============================
 @router.post("/login", summary="로그인")
 def login(user_data: UserLogin, db: Session = Depends(get_db)):
     try:
-        # 1. 전화번호 암호화 후 조회
         crypto_phone = aes_encrypt(user_data.phone)
         db_user = db.query(models.User).filter(models.User.phone == crypto_phone).first()
 
         if not db_user:
             raise HTTPException(status_code=401, detail="전화번호 또는 비밀번호가 일치하지 않습니다.")
 
-        # 2. 유저 검증 및 비밀번호 확인 (서현님 pwd_context 검증 로직 적용)
-        safe_password = truncate_password(user_data.password)
-        if not pwd_context.verify(safe_password, db_user.password):
+        # 비밀번호 검증도 순수 bcrypt로 처리
+        password_bytes = user_data.password.encode('utf-8')
+        if len(password_bytes) > 72:
+            password_bytes = password_bytes[:72]
+            
+        if not bcrypt.checkpw(password_bytes, db_user.password.encode('utf-8')):
             raise HTTPException(status_code=401, detail="전화번호 또는 비밀번호가 일치하지 않습니다.")
 
-        # 3. 로그인 성공 시 JWT 토큰 생성 (원영님 핵심 로직 유지!)
+        # 로그인 성공 시 JWT 토큰 생성
         access_token = create_access_token(data={"sub": db_user.user_id})
 
         return {
             "status": "success",
             "message": f"안녕하세요, {db_user.user_id}님!",
-            "access_token": access_token,  # 발급된 토큰 전달
+            "access_token": access_token,
             "token_type": "bearer",
             "user_id": db_user.user_id
         }
@@ -105,24 +95,21 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="서버 내부 오류가 발생했습니다.")
 
 # ===============================
-# 3️⃣ 내 점수 기록 조회 (안전한 JWT 기반 조회 유지)
+# 3️⃣ 내 점수 기록 조회 (그대로 유지)
 # ===============================
 @router.get("/history", summary="마이페이지 - 내 과거 기록 조회")
 def get_user_history(
     current_user: Optional[str] = Depends(get_current_user_optional),
     db: Session = Depends(get_db)
 ):
-    # 1. 로그인 확인 (비회원 차단)
     if not current_user:
         return {"status": "fail", "message": "로그인이 필요한 서비스입니다."}
 
-    # 2. DB 조회 (토큰에서 뽑아낸 안전한 current_user 사용)
     records = db.query(models.AnalysisResult)\
                 .filter(models.AnalysisResult.user_id == current_user)\
                 .order_by(models.AnalysisResult.id.desc())\
                 .all()
 
-    # 3. 프론트엔드가 화면(history)에 뿌리기 편하게 가공
     history_list = []
     for record in records:
         history_list.append({
@@ -133,11 +120,9 @@ def get_user_history(
                 "tempo": record.tempo_score,
                 "volume": record.volume_score
             },
-            # 피드백 텍스트가 너무 길면 UI가 망가지므로 100자까지만 자르고 "..." 붙이기
             "feedback_summary": record.feedback[:100] + "..." if record.feedback else "피드백 없음"
         })
 
-    # 4. JSON 최종 응답
     return {
         "status": "success",
         "message": f"{current_user}님의 누적 기록을 불러왔습니다.",

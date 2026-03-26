@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QTimer
 import requests
+import webbrowser
 
 # ================= 키보드 =================
 class NumberKeyboard(QWidget):
@@ -684,6 +685,9 @@ class LoginPage(QWidget):
 
             if response.status_code == 200:
                 print("✅ 로그인 성공!")
+                user_id = data.get("user_id", "Guest")
+                token = data.get("access_token", "")
+                self.on_success(user_id=user_id, token=token)
 
                 self.parent().current_user_phone = phone
 
@@ -877,6 +881,9 @@ class KioskApp(QWidget):
         self.setLayout(layout)
         self.setStyleSheet("background-color:#DDE6ED;")
 
+        self.current_user_id = "Guest"
+        self.current_token = ""
+
 
     def init_pages(self):
         self.home = HomePage(self.show_signup, self.show_login, self.show_song)
@@ -898,7 +905,9 @@ class KioskApp(QWidget):
         self.login.reset() 
         self.stack.setCurrentWidget(self.login)
 
-    def show_song(self):
+    def show_song(self, user_id="Guest", token=""):
+        self.current_user_id = user_id
+        self.current_token = token
         self.song.reset()
         self.stack.setCurrentWidget(self.song)
 
