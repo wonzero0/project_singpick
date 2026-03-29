@@ -13,7 +13,6 @@ from routers import mr
 from core.ai_engine import get_vocal_feedback, recommend_songs
 from core.security import cipher
 from core.ai_engine import analyze_error
-from routers import users, songs
 from contextlib import asynccontextmanager
 
 @asynccontextmanager
@@ -70,6 +69,7 @@ app.include_router(users.router)
 app.include_router(booth.router)
 app.include_router(songs.router)
 app.include_router(kiosk.router)
+app.include_router(library.router)
 
 
 def init_dummy_songs(db: Session):

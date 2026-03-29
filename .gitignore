@@ -4,3 +4,6 @@ __pycache__/
 
 downloaded_mrs/
 *.mp3
+
+*.env
+api.env
