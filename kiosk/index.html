@@ -158,7 +158,13 @@ body {
     </div>
   </div>
 
-  <input class="search" id="searchInput" placeholder="노래 제목 또는 가수 검색" oninput="filterSongs()">
+  <input
+  class="search"
+  id="searchInput"
+  placeholder="노래 제목 또는 가수 검색"
+  oninput="debounceSearch()" 
+>
+  
   <div class="song-list" id="songList"></div>
 </div>
 
@@ -186,211 +192,210 @@ body {
 let currentIndex = 0;
 let currentSong = null;
 let selected = []; // 예약된 노래 목록
+let searchTimer; // 타이머 변수
 
-// 🎵 하드코딩된 노래 데이터 (유지)
+// ⚡ 실시간 검색 디바운싱
+function debounceSearch() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+        filterSongs(); 
+    }, 300);
+}
+
+// 🎵 가사 데이터
 const songData = {
-  "0+0 | 한로로": {
-    audio: "0+0.m4a",
-    lyrics: [ { time: 12, text: "3" }, { time: 13, text: "2" }, { time: 14, text: "1" }, { time: 15, text: "검은 눈동자의 사각지대를 찾으러 가자" } ]
-  }, 
-  "한숨 | 이하이": {
-    audio: "여름밤에 우리.m4a",
-    lyrics: [ { time: 14, text: "3" }, { time: 32, text: "숨을 크게 쉬어봐요" } ]
-  },
-  "여름밤에 우리 | 전진희(feat. wave to earth)": {
-    audio: "여름밤에 우리.m4a",
-    lyrics: [ { time: 15, text: "3" }, { time: 18, text: "오랜만에 너를 만나 얘길 나누니" } ]
-  }
+    "0+0 | 한로로": {
+        lyrics: [ { time: 12, text: "3" }, { time: 13, text: "2" }, { time: 14, text: "1" }, { time: 15, text: "검은 눈동자의 사각지대를 찾으러 가자" } ]
+    }, 
+    "한숨 | 이하이": {
+        lyrics: [ { time: 14, text: "3" }, { time: 32, text: "숨을 크게 쉬어봐요" } ]
+    },
+    "여름밤에 우리 | 전진희(feat. wave to earth)": {
+        lyrics: [ { time: 15, text: "3" }, { time: 18, text: "오랜만에 너를 만나 얘길 나누니" } ]
+    }
 };
 
-const songList = document.getElementById("songList");
 const micBtn = document.getElementById("micBtn");
 const reserveScreen = document.getElementById("reserveScreen");
 const reserveList = document.getElementById("reserveList");
 const audio = document.getElementById("audio");
 
-/* ================= 🎵 노래 검색 및 예약 로직 ================= */
+/* ================= 🔍 노래 검색 ================= */
 async function filterSongs() {
-  const keyword = document.getElementById("searchInput").value.trim();
-  const songList = document.getElementById("songList");
+    const keyword = document.getElementById("searchInput").value.trim();
+    const songList = document.getElementById("songList");
 
-  try {
-    const response = await axios.get(`http://127.0.0.1:8000/library/search?keyword=${keyword}`);
-    const songsFromDB = response.data.results; 
+    try {
+        const response = await axios.get(`http://127.0.0.1:8000/library/search?keyword=${keyword}`);
+        const songsFromDB = response.data.results; 
 
-    songList.innerHTML = ""; 
+        songList.innerHTML = ""; 
 
-    if (!songsFromDB || songsFromDB.length === 0) {
-        songList.innerHTML = "<div class='song' style='text-align:center; color:gray;'>검색 결과가 없습니다.</div>";
-        return;
-    }
-
-    songsFromDB.forEach(song => {
-      const div = document.createElement("div");
-      div.className = "song";
-      
-      const songName = `${song.title} | ${song.singer}`;
-      div.innerHTML = `<strong>${song.title}</strong> - ${song.singer} <span style="font-size:14px; color:gray;">(TJ: ${song.tj_number})</span>`;
-
-      // 🚨 여기가 핵심! 노래를 클릭했을 때 예약되는 로직
-      div.onclick = () => {
-        let remainSongs = parseInt(localStorage.getItem("remain_songs") || "0");
-
-        if (remainSongs <= 0) return alert("남은 곡이 없습니다! 추가 결제 후 이용해주세요.");
-        if (selected.includes(songName)) return alert("이미 예약된 곡입니다.");
-
-        if (confirm(`'${songName}'을 예약하시겠습니까?`)) {
-          // 1. 남은 곡 수 차감
-          remainSongs -= 1;
-          localStorage.setItem("remain_songs", remainSongs);
-          
-          // 2. 예약 목록에 추가
-          selected.push(songName);
-          
-          // 3. 백엔드 전송
-          axios.post('http://127.0.0.1:8000/library/reserve', null, {
-            params: { booth_id: 1, tj_number: song.tj_number }
-          })
-          .then(res => console.log("서버 예약 성공:", res.data))
-          .catch(err => console.error("서버 예약 실패:", err));
-
-          // 4. 화면 숫자 업데이트
-          updateUI();
+        if (!songsFromDB || songsFromDB.length === 0) {
+            songList.innerHTML = "<div class='song' style='text-align:center; color:gray;'>검색 결과가 없습니다.</div>";
+            return;
         }
-      };
-      songList.appendChild(div);
-    });
-  } catch (error) {
-    console.error("검색 실패:", error);
-  }
+
+        songsFromDB.forEach(song => {
+            const div = document.createElement("div");
+            div.className = "song";
+            const songName = `${song.title} | ${song.singer}`;
+            div.innerHTML = `<strong>${song.title}</strong> - ${song.singer} <span style="font-size:14px; color:gray;">(금영: ${song.ky_number})</span>`;
+
+            div.onclick = () => {
+                let remainSongs = parseInt(localStorage.getItem("remain_songs") || "0");
+                if (remainSongs <= 0) return alert("남은 곡이 없습니다!");
+                if (selected.includes(songName)) return alert("이미 예약된 곡입니다.");
+
+                if (confirm(`'${songName}'을 예약하시겠습니까?`)) {
+                    remainSongs -= 1;
+                    localStorage.setItem("remain_songs", remainSongs);
+                    selected.push(songName);
+                    
+                    axios.post('http://127.0.0.1:8000/library/reserve', null, {
+                        params: { booth_id: 1, ky_number: song.ky_number }
+                    })
+                    .then(() => console.log("서버 예약 성공"))
+                    .catch(err => console.error("서버 예약 실패:", err));
+
+                    updateUI();
+                }
+            };
+            songList.appendChild(div);
+        });
+    } catch (error) {
+        console.error("검색 실패:", error);
+    }
 }
 
-/* ================= 🔄 화면(UI) 숫자 업데이트 ================= */
+/* ================= 🔄 UI 업데이트 ================= */
 function updateUI() {
-  const remainSongs = parseInt(localStorage.getItem("remain_songs") || "0");
-  const reservedSongs = selected.length;
+    const remainSongs = parseInt(localStorage.getItem("remain_songs") || "0");
+    const reservedSongs = selected.length;
 
-  document.getElementById("display-songs").innerText = remainSongs;
-  document.getElementById("reserved-songs-count").innerText = reservedSongs;
+    document.getElementById("display-songs").innerText = remainSongs;
+    document.getElementById("reserved-songs-count").innerText = reservedSongs;
 
-  // 🚨 1번 요청: 남은 곡이 0이 되어야만(결제한 곡을 다 예약해야만) 마이크 버튼 표시!
-  if (remainSongs <= 0 && reservedSongs > 0) {
-    micBtn.style.display = "block";
-  } else {
-    micBtn.style.display = "none";
-  }
+    if (remainSongs <= 0 && reservedSongs > 0) {
+        micBtn.style.display = "block";
+    } else {
+        micBtn.style.display = "none";
+    }
 }
 
-/* ================= 🎤 마이크 버튼 및 예약 확인 창 ================= */
+/* ================= 🎤 예약 확인 및 시작 ================= */
 micBtn.onclick = () => {
-  reserveList.innerHTML = "";
-  selected.forEach(s => {
-    const div = document.createElement("div");
-    div.className = "reserve-item";
-    div.innerText = s;
-    reserveList.appendChild(div);
-  });
-  reserveScreen.style.display = "block";
+    reserveList.innerHTML = "";
+    selected.forEach(s => {
+        const div = document.createElement("div");
+        div.className = "reserve-item";
+        div.innerText = s;
+        reserveList.appendChild(div);
+    });
+    reserveScreen.style.display = "block";
 };
 
 function closeReserve() { reserveScreen.style.display = "none"; }
 
 function startSong() {
-  if (selected.length === 0) return alert("노래를 먼저 예약해주세요!");
-  currentIndex = 0;
-  reserveScreen.style.display = "none";
-  playSong(currentIndex);
+    if (selected.length === 0) return alert("노래를 먼저 예약해주세요!");
+    reserveScreen.style.display = "none";
+    playSong(0); // 0번 인덱스(제일 처음 곡)부터 재생
 }
 
-/* ================= 🎶 노래 재생 ================= */
-function playSong(index) {
-  const songName = selected[index];
-  const data = songData[songName];
-
-  if (!data) return alert("아직 준비되지 않은 노래예요!");
-
-  document.getElementById("playScreen").style.display = "block";
-  document.getElementById("songTitle").innerText = songName;
-
-  const countdownEl = document.getElementById("countdown");
-  const lyricsBox = document.getElementById("lyrics");
-
-  countdownEl.innerText = "";  
-  lyricsBox.innerText = "";
-
-  audio.src = data.audio;
-  audio.play();
-
-  audio.ontimeupdate = () => {
-    const current = audio.currentTime;
-    for (let i = data.lyrics.length - 1; i >= 0; i--) {
-      if (current >= data.lyrics[i].time) {
-        lyricsBox.innerText = data.lyrics[i].text;
-        break;
-      }
-    }
-  };
-
-  audio.onended = () => { showNextCountdown(); };
-}
-
+/* ================= ⏳ 카운트다운 로직 ================= */
 function showNextCountdown() {
-  const countdownEl = document.getElementById("countdown");
-  const lyricsBox = document.getElementById("lyrics");
+    const countdownEl = document.getElementById("countdown");
+    const lyricsBox = document.getElementById("lyrics");
 
-  if (currentIndex >= selected.length - 1) {
     lyricsBox.innerText = "";
-    countdownEl.innerText = "사용자의 노래를 분석 중입니다.";
-    return;
-  }
+    let seconds = 5;
+    countdownEl.innerText = `수고하셨습니다!\n다음 곡 시작까지 ${seconds}초...`;
 
-  let wait = 10;
-  lyricsBox.innerText = "";
-  countdownEl.innerText = `다음 곡 재생까지 ${wait}초`;
-
-  const waitTimer = setInterval(() => {
-    wait--;
-    if (wait === 0) {
-      clearInterval(waitTimer);
-      currentIndex++;
-      playSong(currentIndex);
-    } else {
-      countdownEl.innerText = `다음 곡 재생까지 ${wait}초`;
-    }
-  }, 1000);
+    const timer = setInterval(() => {
+        seconds--;
+        if (seconds > 0) {
+            countdownEl.innerText = `수고하셨습니다!\n다음 곡 시작까지 ${seconds}초...`;
+        } else {
+            clearInterval(timer);
+            if (selected.length > 0) playSong(0); 
+            else document.getElementById("playScreen").style.display = "none";
+        }
+    }, 1000);
 }
 
-// ==========================================
-// 🚨 파이썬(키오스크) 데이터 낚아채기 및 초기 세팅
-// ==========================================
+/* ================= 🎶 노래 재생 (최종본) ================= */
+async function playSong(index) {
+    const songName = selected[index];
+    const playScreen = document.getElementById("playScreen");
+    const countdownEl = document.getElementById("countdown");
+    const lyricsBox = document.getElementById("lyrics");
+
+    playScreen.style.display = "block";
+    document.getElementById("songTitle").innerText = songName;
+    countdownEl.innerText = "MR을 가져오는 중... ⏳";
+    lyricsBox.innerText = "";
+
+    try {
+        const response = await axios.get(`http://127.0.0.1:8000/library/download_mr?song_info=${songName}`);
+        audio.src = response.data.audio_url; 
+        countdownEl.innerText = "";
+        audio.play();
+
+        const data = songData[songName];
+        if (data && data.lyrics) {
+            audio.ontimeupdate = () => {
+                const current = audio.currentTime;
+                for (let i = data.lyrics.length - 1; i >= 0; i--) {
+                    if (current >= data.lyrics[i].time) {
+                        lyricsBox.innerText = data.lyrics[i].text;
+                        break;
+                    }
+                }
+            };
+        }
+
+        // index.html의 audio.onended 부분 수정
+        audio.onended = () => { 
+            console.log("🎵 노래 종료! AI 분석 결과로 이동합니다.");
+    
+        // 지금 부른 노래를 지우고 UI 갱신
+            selected.shift(); 
+            updateUI(); 
+
+            // 🚨 [추가] 분석 결과 페이지로 이동 (쿼리 스트링으로 유저ID 전달)
+            const userId = localStorage.getItem("user_id") || "Guest";
+            // 실제 서비스라면 여기서 분석 API를 먼저 호출하고 넘어가겠지만, 
+            // 우선 페이지 연결부터 확인하기 위해 아래처럼 이동시킵니다.
+            location.href = `index2.html?user_id=${userId}`; 
+        };
+
+    } catch (error) {
+        console.error("재생 실패:", error);
+        countdownEl.innerText = "재생 실패! 다음 곡으로 넘어갑니다.";
+        setTimeout(() => {
+            selected.shift();
+            updateUI();
+            if (selected.length > 0) showNextCountdown();
+            else playScreen.style.display = "none";
+        }, 3000);
+    }
+}
+
+// 초기 세팅
 window.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
-    const urlUserId = urlParams.get('user_id');
-    const urlToken = urlParams.get('token');
     const urlSongs = urlParams.get('songs');
-
     if (urlSongs) {
-        localStorage.setItem("user_id", urlUserId);
-        localStorage.setItem("access_token", urlToken);
+        localStorage.setItem("user_id", urlParams.get('user_id'));
         localStorage.setItem("remain_songs", urlSongs);
         window.history.replaceState({}, document.title, window.location.pathname);
     }
-
-    const currentUserId = localStorage.getItem("user_id") || "Guest";
-    const currentSongs = localStorage.getItem("remain_songs") || "0";
-
-    document.getElementById("display-user").innerText = currentUserId;
-    document.getElementById("display-songs").innerText = currentSongs;
-
-    if (parseInt(currentSongs) <= 0) {
-        alert("결제된 곡이 없습니다. 키오스크에서 결제 후 입장해주세요!");
-    } else {
-        console.log(`[부스 입장 완료] ${currentUserId}님, ${currentSongs}곡 남았습니다.`);
-    }
-
-    // 🚨 화면이 켜지자마자 노래 목록 불러오기
+    document.getElementById("display-user").innerText = localStorage.getItem("user_id") || "Guest";
+    document.getElementById("display-songs").innerText = localStorage.getItem("remain_songs") || "0";
     filterSongs();
 });
 </script>
+
 </body>
 </html>

@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime, ForeignKey
 from sqlalchemy.sql import func
 from database import Base
+from sqlalchemy.orm import relationship
 
 # 1. 사용자 테이블
 class User(Base):
@@ -25,10 +26,12 @@ class Booth(Base):
 class Song(Base):
     __tablename__ = "songs"
 
-    song_id = Column(Integer, primary_key=True, index=True) 
-    title = Column(String(100), index=True)                 
-    singer = Column(String(50), index=True)                 
-    tj_number = Column(Integer, unique=True)                
+    song_id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(100), nullable=False)
+    singer = Column(String(100), nullable=False)
+    ky_number = Column(Integer, unique=True, index=True) 
+
+    reservations = relationship("Reservation", back_populates="song")             
 
 # 4. 예약 목록 (부스별 대기열)
 class Reservation(Base):
@@ -36,8 +39,13 @@ class Reservation(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     booth_id = Column(Integer)  
-    song_id = Column(Integer)   
+    
+    song_id = Column(Integer, ForeignKey("songs.song_id"))   
+    
     status = Column(String(20), default="waiting") 
+    
+    # 🚨 서로 마주 보게 연결해 줍니다.
+    song = relationship("Song", back_populates="reservations")
 
 # [새로 추가] 5. AI 분석 결과 테이블
 class AnalysisResult(Base):

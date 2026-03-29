@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 import models
-from database import engine, get_db
+from database import engine, get_db, SessionLocal
 from routers import booth, users, songs, library, kiosk  # kiosk 포함
 from fastapi.staticfiles import StaticFiles
 from routers import mr
@@ -17,8 +17,12 @@ from contextlib import asynccontextmanager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 서버가 켜질 때 실행할 내용 
     print("서버가 시작되었습니다. (Startup Event)")
+    db = SessionLocal()
+    try:
+        init_dummy_songs(db)
+    finally:
+        db.close()
     yield
     print("서버가 종료되었습니다. (Shutdown Event)")
 
@@ -40,15 +44,10 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-app.include_router(mr.router, prefix="/youtube", tags=["YouTube API"])
 # ===============================
-# FastAPI 앱 생성
+# 정적 파일 서비스 (폴더 문 열어주기 - 모두 한곳으로 모음!)
 # ===============================
-app = FastAPI(title="SingPick Server")
-
-# ===============================
-# Kiosk 관련: 정적 파일 서비스
-# ===============================
+app.mount("/downloaded_mrs", StaticFiles(directory="downloaded_mrs"), name="downloaded_mrs")
 app.mount("/kiosk_static", StaticFiles(directory="kiosk"), name="kiosk_static")
 
 # ===============================
@@ -56,7 +55,7 @@ app.mount("/kiosk_static", StaticFiles(directory="kiosk"), name="kiosk_static")
 # ===============================
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 모든 도메인 허용 (테스트용), 운영 시 실제 도메인만 허용
+    allow_origins=["*"],  # 모든 도메인 허용 (테스트용)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -65,6 +64,7 @@ app.add_middleware(
 # ===============================
 # 라우터 등록
 # ===============================
+app.include_router(mr.router, prefix="/youtube", tags=["YouTube API"])
 app.include_router(users.router)
 app.include_router(booth.router)
 app.include_router(songs.router)
@@ -73,23 +73,76 @@ app.include_router(library.router)
 
 
 def init_dummy_songs(db: Session):
-    if db.query(models.Song).count() == 0:
+    # 현재 노래가 몇 곡 있는지 확인
+    song_count = db.query(models.Song).count()
+    
+    # 🚨 노래가 50곡이 안 되면? (예전 10곡만 있거나 꼬였을 때) -> 싹 청소하고 새로 넣기!
+    if song_count < 50:
+        print("🎵 [System] 기존 DB 데이터를 정리하고 50곡을 새로 세팅합니다...")
+        
+        # (중요) 에러 방지를 위해 예약된 내역 먼저 지우고, 노래를 지웁니다.
+        db.query(models.Reservation).delete()
+        db.query(models.Song).delete()
+        db.commit()
+
         dummy_songs = [
-            models.Song(title="0+0", singer="한로로", tj_number=99991),
-            models.Song(title="한숨", singer="이하이", tj_number=99992),
-            models.Song(title="여름밤에 우리", singer="전진희(feat. wave to earth)", tj_number=99993),
-            models.Song(title="좋은 날", singer="아이유", tj_number=1001),
-            models.Song(title="너랑 나", singer="아이유", tj_number=1002),
-            models.Song(title="밤편지", singer="아이유", tj_number=1003),
-            models.Song(title="보고 싶다", singer="김범수", tj_number=2001),
-            models.Song(title="응급실", singer="izi", tj_number=3001),
-            models.Song(title="소주 한 잔", singer="임창정", tj_number=4001),
-            models.Song(title="Hype Boy", singer="NewJeans", tj_number=5001),
+            # --- 🌟 화면 켜지면 바로 보이는 상위 10곡 ---
+            models.Song(title="0+0", singer="한로로", ky_number=81234),
+            models.Song(title="한숨", singer="이하이", ky_number=49040),
+            models.Song(title="여름밤에 우리", singer="전진희(feat. wave to earth)", ky_number=81235),
+            models.Song(title="좋은 날", singer="아이유", ky_number=47250),
+            models.Song(title="소주 한 잔", singer="임창정", ky_number=6279),
+            models.Song(title="응급실", singer="izi", ky_number=64156),
+            models.Song(title="가시", singer="버즈", ky_number=65005),
+            models.Song(title="보고 싶다", singer="김범수", ky_number=6259),
+            models.Song(title="Hype Boy", singer="NewJeans", ky_number=82222),
+            models.Song(title="사건의 지평선", singer="윤하", ky_number=81111),
+            
+            # --- 🔍 검색으로 찾을 수 있는 40곡 (총 50곡) ---
+            models.Song(title="Tears", singer="소찬휘", ky_number=6133),
+            models.Song(title="체념", singer="빅마마", ky_number=63273),
+            models.Song(title="사랑의 배터리", singer="홍진영", ky_number=46927),
+            models.Song(title="첫눈처럼 너에게 가겠다", singer="에일리", ky_number=49363),
+            models.Song(title="모든 날, 모든 순간", singer="폴킴", ky_number=49764),
+            models.Song(title="좋니", singer="윤종신", ky_number=49531),
+            models.Song(title="오래된 노래", singer="스탠딩 에그", ky_number=47854),
+            models.Song(title="취중진담", singer="전람회", ky_number=3350),
+            models.Song(title="애인있어요", singer="이은미", ky_number=45367),
+            models.Song(title="비밀번호 486", singer="윤하", ky_number=45851),
+            models.Song(title="눈의 꽃", singer="박효신", ky_number=64645),
+            models.Song(title="천년의 사랑", singer="박완규", ky_number=5455),
+            models.Song(title="말리꽃", singer="이승철", ky_number=6233),
+            models.Song(title="노래방에서", singer="장범준", ky_number=59998),
+            models.Song(title="Ditto", singer="NewJeans", ky_number=83333),
+            models.Song(title="Love Dive", singer="IVE", ky_number=84444),
+            models.Song(title="다시 만난 세계", singer="소녀시대", ky_number=46014),
+            models.Song(title="밤편지", singer="아이유", ky_number=49511),
+            models.Song(title="오르트구름", singer="윤하", ky_number=85555),
+            models.Song(title="스물다섯, 스물하나", singer="자우림", ky_number=77969),
+            models.Song(title="너의 의미", singer="아이유", ky_number=78065),
+            models.Song(title="안아줘", singer="정준일", ky_number=47625),
+            models.Song(title="널 사랑하지 않아", singer="어반자카파", ky_number=49091),
+            models.Song(title="우주를 줄게", singer="볼빨간사춘기", ky_number=49111),
+            models.Song(title="TOMBOY", singer="(여자)아이들", ky_number=86666),
+            models.Song(title="신호등", singer="이무진", ky_number=87777),
+            models.Song(title="다정히 내 이름을 부르면", singer="경서예지", ky_number=88888),
+            models.Song(title="취기를 빌려", singer="산들", ky_number=89999),
+            models.Song(title="Dynamite", singer="BTS", ky_number=91111),
+            models.Song(title="봄날", singer="BTS", ky_number=49222),
+            models.Song(title="그대라는 사치", singer="한동근", ky_number=49123),
+            models.Song(title="어디에도", singer="엠씨더맥스", ky_number=49015),
+            models.Song(title="선물", singer="멜로망스", ky_number=49333),
+            models.Song(title="에잇", singer="아이유", ky_number=92222),
+            models.Song(title="Celebrity", singer="아이유", ky_number=93333),
+            models.Song(title="Next Level", singer="aespa", ky_number=94444),
+            models.Song(title="ELEVEN", singer="IVE", ky_number=95555),
+            models.Song(title="Antifragile", singer="LE SSERAFIM", ky_number=96666),
+            models.Song(title="Super Shy", singer="NewJeans", ky_number=97777),
+            models.Song(title="후라이의 꿈", singer="AKMU", ky_number=98888)
         ]
         db.add_all(dummy_songs)
         db.commit()
-        print("🎵 [System] 가짜 노래 10곡이 DB에 저장되었습니다!")
-
+        print("🎵 [System] 기본 인기곡 50곡이 DB에 세팅되었습니다!")
 
 # ===============================
 # 루트 경로
