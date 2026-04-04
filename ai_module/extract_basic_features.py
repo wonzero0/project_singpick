@@ -13,22 +13,23 @@ os.makedirs(FEATURE_DIR, exist_ok=True)
 
 
 def separate_vocals(wav_path):
-    subprocess.run(
-        [
-            "python", "-m", "demucs",
-            "--two-stems", "vocals",
-            "--mp3",
-            "-n", "htdemucs",
-            wav_path,
-            "-o", TEMP_DIR
-        ],
-        check=True
-    )
+    command = [
+        "demucs", 
+        "--two-stems", "vocals",
+        "--mp3",
+        "-n", "htdemucs",
+        wav_path,
+        "-o", TEMP_DIR,
+        "-d", "cpu" 
+    ]
+    
+    print(f"[System] Demucs 실행 중: {wav_path}")
+    
+    subprocess.run(command, check=True)
 
     name = os.path.splitext(os.path.basename(wav_path))[0]
     vocals_path = os.path.join(TEMP_DIR, "htdemucs", name, "vocals.mp3")
     return vocals_path
-
 
 def extract_features(y, sr):
     features = {}

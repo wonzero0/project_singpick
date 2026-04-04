@@ -35,10 +35,7 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title="🎤 SING-PICK: AI 기반 퍼스널 노래 추천 노래방 관제 시스템",
     description="""
-    AI 및 정보보안 기술이 결합된 노래방 백엔드 서버입니다.
-    
-    **주요 기능**: 실시간 가창 분석, JWT 기반 보안 인증, AI 보컬 피드백 및 추천 등
-    **기술 스택**: FastAPI, MySQL, Google Gemini AI, JWT 등
+    사용자 음색에 가장 잘 어울리는, 가장 잘 부를 수 있는 노래를 추천드리는 노래방 백엔드 서버입니다.
     """,
     version="1.0.0",
     lifespan=lifespan

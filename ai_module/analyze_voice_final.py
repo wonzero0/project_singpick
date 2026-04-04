@@ -6,6 +6,7 @@ from ai_module.extract_basic_features import extract_single_wav
 from ai_module.analyze_voice import analyze_voice
 from ai_module.audio_utils import ensure_wav
 from sklearn.metrics.pairwise import cosine_similarity
+from core.ai_engine import get_vocal_feedback, get_similarity_based_feedback
 
 # ====== reference_songs.json 실제 위치 반영 ======
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # ai_module 폴더 기준
@@ -14,14 +15,16 @@ REFERENCE_FILE = os.path.join(BASE_DIR, "reference_songs.json")  # ai_module 안
 
 TOP_N = 3  # Top-N 유사 가수 / 유사곡 계산
 
-def analyzeVoice(wav_path):
+def analyzeVoice(wav_path, user_bpm=120.0, reference_song="No_Doubt"):
     if not os.path.exists(wav_path):
         return {"error": "음성 파일이 존재하지 않습니다."}
 
+    print(f"[System] 분석 시작 - 곡명: {reference_song}, 설정 BPM: {user_bpm}")
     wav_path = ensure_wav(wav_path)
 
     # 1. feature 추출
     extract_single_wav(wav_path)
+
     voice_name = os.path.splitext(os.path.basename(wav_path))[0]
     feature_dir = os.path.join("features", voice_name)
 
@@ -132,6 +135,27 @@ def analyzeVoice(wav_path):
 
     # 7. 최종 scores 계산
     final_scores = {k: round(np.mean(v), 3) if v else 0.0 for k, v in scores_aggregate.items()}
+    print(f"[System] 점수 계산 완료: {final_scores}") # 👈 확인용 출력 추가
+
+    print("[System] 제미나이 AI 피드백 생성 중... (잠시만 기다려주세요)") # 👈 추가
+    try:
+        ai_feedback = get_vocal_feedback(
+            pitch_score=final_scores['pitch'] * 100, 
+            tempo_score=final_scores['tempo'] * 100, 
+            avg_volume=rms * 100
+        )
+        print("[System] 제미나이 피드백 생성 완료!") # 👈 추가
+    except Exception as e:
+        print(f"[Error] 제미나이 피드백 생성 실패: {e}")
+        ai_feedback = "AI 피드백을 생성할 수 없습니다."
+    
+    # 💡 유사도 기반 맞춤 추천 피드백 (가장 유사한 가수 1위 기준)
+    if top_artists:
+        top_singer = top_artists[0]['artist']
+        top_sim = top_artists[0]['similarity'] * 100
+        similarity_feedback = get_similarity_based_feedback(top_singer, top_sim)
+    else:
+        similarity_feedback = "유사한 아티스트를 찾을 수 없습니다."
 
     # 8. 피드백 생성
     feedback = []
@@ -143,6 +167,11 @@ def analyzeVoice(wav_path):
         feedback.append("템포 안정감을 조금 더 보완하면 완성도가 올라갑니다.")
     if rms < 0.08:
         feedback.append("성량 유지 연습이 필요합니다.")
+    
+    if feedback:
+        simple_tips = "\n".join(feedback)
+    else:
+        simple_tips = "분석된 추가 팁이 없습니다."
 
     # ✅ 최종 반환
     return {
@@ -152,9 +181,8 @@ def analyzeVoice(wav_path):
         "scores": final_scores,
         "similar_artists": top_artists,
         "similar_songs": top_songs,
-        "feedback": feedback
+        "feedback": f"{ai_feedback}\n\n{similarity_feedback}\n\n[추가 가이드]\n{simple_tips}"
     }
-
 
 if __name__ == "__main__":
     audio_dir = "audio"

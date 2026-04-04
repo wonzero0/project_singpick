@@ -11,8 +11,9 @@ class User(Base):
     phone = Column(String(255), unique=True, index=True) 
     password = Column(String(255))   
     pitch = Column(String(255), nullable=True)    
-
-    remaining_songs = Column(Integer, default=0)               
+    remaining_songs = Column(Integer, default=0) 
+    login_fail_count = Column(Integer, default=0)
+    lock_until = Column(DateTime, nullable=True)              
 
 # 2. 노래방 부스(방) 테이블
 class Booth(Base):

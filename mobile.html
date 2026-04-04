@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SingPick - 내 결과 보기</title>
+
+<style>
+* { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+body { margin: 0; background: #fafafa; }
+.page { display: none; padding-bottom: 70px; }
+.page.active { display: block; }
+header { position: fixed; top: 0; width: 100%; height: 70px; background: #fafafa; text-align: center; line-height: 70px; font-size: 24px; font-weight: bold; z-index: 10; border-bottom: 1px solid #ddd; }
+.content { padding: 20px; padding-top: 90px; }
+.box { background: white; border-radius: 12px; padding: 16px; margin-bottom: 15px; box-shadow: 0 0 6px rgba(0,0,0,0.05); }
+
+/* 하단 네비게이션 */
+.nav { position: fixed; bottom: 0; width: 100%; height: 60px; background: white; border-top: 1px solid #ddd; display: flex; }
+.nav button { flex: 1; border: none; background: none; font-size: 16px; }
+.nav button.active { color: #ff4d6d; font-weight: bold; border-top: 3px solid #ff4d6d; }
+
+/* 그래프 스타일 */
+.graph-container { display: flex; flex-direction: column; gap: 12px; margin-top: 15px; }
+.graph-item { display: flex; align-items: center; justify-content: space-between; }
+.graph-label { font-size: 16px; font-weight: bold; color: #555; width: 50px; }
+.bar-background { flex-grow: 1; height: 12px; background-color: #e0e0e0; border-radius: 6px; margin: 0 15px; overflow: hidden; position: relative; }
+.bar-fill { height: 100%; background-color: #ddd; border-radius: 6px; width: 0%; transition: width 0.8s ease-out; }
+.graph-score { font-size: 16px; font-weight: bold; color: #333; width: 50px; text-align: right; }
+
+.history-item { border-bottom: 1px solid #eee; padding: 10px 0; }
+</style>
+</head>
+
+<body>
+
+<div id="home" class="page active">
+  <header>SING PICK 결과</header>
+  <div class="content">
+    <h3 id="welcome-msg" style="margin-top:0;">데이터를 불러오는 중...</h3>
+    
+    <div class="box">
+      <strong>🎤 AI 상세 피드백</strong>
+      <p id="feedback" style="white-space: pre-wrap; color:#555;">...</p>
+    </div>
+
+    <div class="box">
+      <strong>📊 상세 음성 그래프</strong>
+      <div id="graph">그래프를 불러오는 중...</div>
+    </div>
+  </div>
+</div>
+
+<div id="mypage" class="page">
+  <header>My Page</header>
+  <div class="content">
+    <div style="font-size:20px; font-weight:bold; margin-bottom:10px;" id="mypage-userid">USER_ID</div>
+    <div style="border-top:1px solid #ddd; margin-bottom:20px;"></div>
+    
+    <div class="box">
+      <strong>📝 누적 피드백 기록</strong>
+      <div id="history-list" style="margin-top: 10px; color:#555; font-size:14px;">기록이 없습니다.</div>
+    </div>
+  </div>
+</div>
+
+<div class="nav">
+  <button id="nav-home" class="active" onclick="showPage('home')">최신 결과</button>
+  <button id="nav-mypage" onclick="showPage('mypage')">마이페이지</button>
+</div>
+
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const userId = urlParams.get('user_id') || 'Guest';
+
+document.getElementById("mypage-userid").innerText = `${userId}님의 누적 기록`;
+
+// 탭 전환 함수
+function showPage(page) {
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+    document.getElementById(page).classList.add("active");
+    document.querySelectorAll(".nav button").forEach(b => b.classList.remove("active"));
+    document.getElementById(`nav-${page}`).classList.add("active");
+}
+
+// 🌟 접속하자마자 자동으로 DB에서 내 기록을 가져오는 함수! (파일 업로드 필요 없음)
+async function fetchMyData() {
+    if (userId === 'Guest') {
+        document.getElementById("welcome-msg").innerText = "비회원은 상세 분석이 저장되지 않습니다.";
+        return;
+    }
+
+    try {
+        // 이미 백엔드에 만들어져 있는 마이페이지 기록 조회 API 호출! (127.0.0.1 대신 IPv4 주소 사용 권장)
+        // 지금은 스마트폰이 아니라 대장님 컴퓨터로 테스트하실 테니 127.0.0.1로 둡니다.
+        const response = await fetch(`http://127.0.0.1:8000/users/history`);
+        const result = await response.json();
+
+        if (result.status === "success" && result.data.history.length > 0) {
+            const historyList = result.data.history;
+            const latest = historyList[0]; // 가장 최근에 부른 결과
+
+            document.getElementById("welcome-msg").innerText = `🎉 ${userId}님의 상세 분석 결과`;
+            
+            // 1. 최신 결과 피드백 & 그래프 세팅
+            document.getElementById("feedback").innerText = latest.feedback_summary || "피드백이 없습니다.";
+            
+            const p_score = latest.scores.pitch;
+            const t_score = latest.scores.tempo;
+            const v_score = latest.scores.volume;
+
+            document.getElementById("graph").innerHTML = `
+                <div class="graph-container">
+                    ${createBarGraph("음정", p_score)}
+                    ${createBarGraph("박자", t_score)}
+                    ${createBarGraph("성량", v_score)}
+                </div>
+            `;
+
+            // 그래프 애니메이션
+            setTimeout(() => {
+                animateBar("pitch-bar", p_score);
+                animateBar("tempo-bar", t_score);
+                animateBar("volume-bar", v_score);
+            }, 100);
+
+            // 2. 마이페이지 누적 기록 리스트 만들기
+            let historyHtml = "";
+            historyList.forEach((item, index) => {
+                historyHtml += `
+                    <div class="history-item">
+                        <strong>${index + 1}번째 녹음</strong>
+                        <div style="font-size:12px; margin-top:5px;">음정: ${item.scores.pitch}점 | 박자: ${item.scores.tempo}점</div>
+                    </div>
+                `;
+            });
+            document.getElementById("history-list").innerHTML = historyHtml;
+
+        } else {
+            document.getElementById("welcome-msg").innerText = "아직 저장된 분석 기록이 없습니다.";
+        }
+    } catch (error) {
+        console.error("데이터 불러오기 실패:", error);
+        document.getElementById("welcome-msg").innerText = "서버 연결에 실패했습니다.";
+    }
+}
+
+// 그래프 그리기 함수 (기존과 동일)
+function createBarGraph(label, score) {
+    const barId = label === "음정" ? "pitch-bar" : (label === "박자" ? "tempo-bar" : "volume-bar");
+    return `
+        <div class="graph-item">
+            <span class="graph-label">${label}</span>
+            <div class="bar-background">
+                <div id="${barId}" class="bar-fill"></div>
+            </div>
+            <span class="graph-score">${score}점</span>
+        </div>
+    `;
+}
+
+function animateBar(barId, score) {
+    const bar = document.getElementById(barId);
+    if(!bar) return;
+    bar.style.width = `${score}%`;
+    if (score >= 90) bar.style.backgroundColor = "#2F80ED";
+    else if (score >= 70) bar.style.backgroundColor = "#27AE60";
+    else if (score >= 50) bar.style.backgroundColor = "#F2C94C";
+    else bar.style.backgroundColor = "#EB5757";
+}
+
+// 페이지 열리면 바로 데이터 가져오기!
+window.addEventListener('DOMContentLoaded', () => {
+    fetchMyData();
+});
+</script>
+
+</body>
+</html>

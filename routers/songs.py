@@ -33,9 +33,9 @@ class AnalysisResponse(BaseModel):
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploaded_files") 
-os.makedirs(UPLOAD_DIR, exist_ok=True) # 서현님 코드 추가분 (폴더 자동생성)
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-ALLOWED_EXTENSIONS = {".wav", ".mp3", ".mp4", ".m4a", ".flac"} # 서현님 코드 추가분
+ALLOWED_EXTENSIONS = {".wav", ".mp3", ".mp4", ".m4a", ".flac"} 
 
 router = APIRouter(prefix="/songs", tags=["🎵 Songs (노래/AI 연동)"])
 

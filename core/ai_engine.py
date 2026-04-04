@@ -3,9 +3,9 @@ from pathlib import Path
 from google import genai
 from dotenv import load_dotenv
 
-# 1. 경로 설정: 파일이 어디서 실행되든 프로젝트 루트의 api.env를 찾도록 설정
+# 1. 경로 설정
 BASE_DIR = Path(__file__).resolve().parent.parent
-env_path = BASE_DIR / "api.env"
+env_path = BASE_DIR / ".env"
 
 # 2. 환경 변수 로드
 load_dotenv(env_path)

@@ -283,25 +283,81 @@ function updateUI() {
     }
 }
 
-/* ================= 🎤 예약 확인 및 시작 ================= */
-micBtn.onclick = () => {
+/* ================= 🎤 예약 확인 및 시작 (취소 기능 포함 완벽판) ================= */
+
+// 1. 예약 목록을 화면에 그리는 함수
+function renderReserveList() {
     reserveList.innerHTML = "";
-    selected.forEach(s => {
+    
+    selected.forEach((songName, index) => {
         const div = document.createElement("div");
         div.className = "reserve-item";
-        div.innerText = s;
+        div.style.display = "flex";
+        div.style.justifyContent = "space-between";
+        div.style.alignItems = "center";
+
+        // 노래 제목 표시
+        const textSpan = document.createElement("span");
+        textSpan.innerText = songName;
+
+        // ❌ 취소 버튼 만들기
+        const cancelBtn = document.createElement("button");
+        cancelBtn.innerText = "취소 ❌";
+        cancelBtn.style.background = "#ff4d6d";
+        cancelBtn.style.color = "white";
+        cancelBtn.style.border = "none";
+        cancelBtn.style.borderRadius = "6px";
+        cancelBtn.style.padding = "6px 12px";
+        cancelBtn.style.cursor = "pointer";
+        cancelBtn.style.fontWeight = "bold";
+
+        // 취소 버튼을 눌렀을 때의 동작
+        cancelBtn.onclick = () => {
+            if (confirm(`'${songName}' 예약을 취소하시겠습니까?`)) {
+                // 1) 배열에서 삭제
+                selected.splice(index, 1);
+
+                // 2) 횟수 복구
+                let remainSongs = parseInt(localStorage.getItem("remain_songs") || "0");
+                localStorage.setItem("remain_songs", remainSongs + 1);
+
+                // 3) UI 업데이트
+                updateUI();
+
+                // 4) 목록 다시 그리기
+                renderReserveList();
+
+                // 5) 다 지워서 0곡이 되면 닫기
+                if (selected.length === 0) {
+                    closeReserve();
+                }
+            }
+        };
+
+        div.appendChild(textSpan);
+        div.appendChild(cancelBtn);
         reserveList.appendChild(div);
     });
+}
+
+// 2. 마이크 버튼 누르면 예약 목록 창 열기
+micBtn.onclick = () => {
+    renderReserveList(); 
     reserveScreen.style.display = "block";
 };
 
-function closeReserve() { reserveScreen.style.display = "none"; }
+// 3. 뒤로 가기 버튼 로직
+function closeReserve() { 
+    reserveScreen.style.display = "none"; 
+}
 
+// 4. 시작 버튼 로직 
 function startSong() {
     if (selected.length === 0) return alert("노래를 먼저 예약해주세요!");
     reserveScreen.style.display = "none";
     playSong(0); // 0번 인덱스(제일 처음 곡)부터 재생
 }
+
 
 /* ================= ⏳ 카운트다운 로직 ================= */
 function showNextCountdown() {
@@ -356,19 +412,17 @@ async function playSong(index) {
         }
 
         // index.html의 audio.onended 부분 수정
-        audio.onended = () => { 
+        audio.onended = function() {
             console.log("🎵 노래 종료! AI 분석 결과로 이동합니다.");
-    
-        // 지금 부른 노래를 지우고 UI 갱신
-            selected.shift(); 
-            updateUI(); 
 
-            // 🚨 [추가] 분석 결과 페이지로 이동 (쿼리 스트링으로 유저ID 전달)
-            const userId = localStorage.getItem("user_id") || "Guest";
-            // 실제 서비스라면 여기서 분석 API를 먼저 호출하고 넘어가겠지만, 
-            // 우선 페이지 연결부터 확인하기 위해 아래처럼 이동시킵니다.
-            location.href = `index2.html?user_id=${userId}`; 
-        };
+            // 🌟 에러의 원인 해결: 이동하기 바로 직전에 아이디와 토큰을 확실하게 찾아옵니다!
+            const urlParams = new URLSearchParams(window.location.search);
+            const userId = urlParams.get('user_id') || 'Guest';
+            const token = urlParams.get('token') || '';
+
+            // 이제 짐(아이디, 토큰)을 다 챙겼으니 index2.html로 안전하게 넘어갑니다!
+            window.location.href = `index2.html?user_id=${userId}&token=${token}`;
+};
 
     } catch (error) {
         console.error("재생 실패:", error);

@@ -6,7 +6,8 @@ import models
 from utils import aes_encrypt
 from typing import Optional 
 from core.auth import create_access_token, get_current_user_optional
-import bcrypt  # 🚨 에러투성이 passlib을 버리고 순수 bcrypt로 복구!
+import bcrypt 
+from datetime import datetime, timedelta
 
 router = APIRouter(prefix="/users", tags=["👤 Users (회원관리)"])
 
@@ -58,26 +59,62 @@ def signup(user_data: UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 # ===============================
-# 2️⃣ 로그인 API (순수 bcrypt로 복구)
+# 🚨 추가: 로그인 실패 횟수 및 차단 시간 기록용 딕셔너리 (메모리)
+# ===============================
+login_attempts = {}
+
+# ===============================
+# 2️⃣ 로그인 API (친절한 안내 문구 적용)
 # ===============================
 @router.post("/login", summary="로그인")
 def login(user_data: UserLogin, db: Session = Depends(get_db)):
     try:
         crypto_phone = aes_encrypt(user_data.phone)
+        
+        # 1. 🛑 차단 상태인지 먼저 확인
+        if crypto_phone in login_attempts:
+            record = login_attempts[crypto_phone]
+            if record["block_until"]:
+                if datetime.now() < record["block_until"]:
+                    remain_time = int((record["block_until"] - datetime.now()).total_seconds())
+                    # 🌟 수정 1: 남은 시간 안내 문구
+                    raise HTTPException(status_code=403, detail=f"5회 연속 실패로 로그인이 제한되었습니다.\n{remain_time}초 후에 다시 시도해주세요. 🚫")
+                else:
+                    login_attempts[crypto_phone] = {"count": 0, "block_until": None}
+
         db_user = db.query(models.User).filter(models.User.phone == crypto_phone).first()
 
+        # 2. 🧐 로그인 실패 판별
+        is_fail = False
         if not db_user:
-            raise HTTPException(status_code=401, detail="전화번호 또는 비밀번호가 일치하지 않습니다.")
+            is_fail = True
+        else:
+            password_bytes = user_data.password.encode('utf-8')
+            if len(password_bytes) > 72:
+                password_bytes = password_bytes[:72]
+            if not bcrypt.checkpw(password_bytes, db_user.password.encode('utf-8')):
+                is_fail = True
 
-        # 비밀번호 검증도 순수 bcrypt로 처리
-        password_bytes = user_data.password.encode('utf-8')
-        if len(password_bytes) > 72:
-            password_bytes = password_bytes[:72]
+        # 3. 📉 실패했을 경우의 처리
+        if is_fail:
+            if crypto_phone not in login_attempts:
+                login_attempts[crypto_phone] = {"count": 1, "block_until": None}
+            else:
+                login_attempts[crypto_phone]["count"] += 1
             
-        if not bcrypt.checkpw(password_bytes, db_user.password.encode('utf-8')):
-            raise HTTPException(status_code=401, detail="전화번호 또는 비밀번호가 일치하지 않습니다.")
+            fail_count = login_attempts[crypto_phone]["count"]
+            
+            if fail_count >= 5:
+                login_attempts[crypto_phone]["block_until"] = datetime.now() + timedelta(minutes=1)
+                # 🌟 수정 2: 5회 딱 틀렸을 때 뜨는 문구
+                raise HTTPException(status_code=403, detail="5회 연속 실패하여 1분간 로그인이 제한됩니다. 🚫")
+            else:
+                # 🌟 수정 3: 1~4회 틀렸을 때 미리 경고해 주는 문구
+                raise HTTPException(status_code=401, detail=f"정보가 일치하지 않습니다.\n(5회 실패 시 1분간 로그인이 제한됩니다. 실패: {fail_count}/5)")
 
-        # 로그인 성공 시 JWT 토큰 생성
+        # 4. 🎉 성공했을 경우: 카운트 싹 다 깨끗하게 초기화
+        login_attempts[crypto_phone] = {"count": 0, "block_until": None}
+
         access_token = create_access_token(data={"sub": db_user.user_id})
 
         return {
@@ -130,3 +167,39 @@ def get_user_history(
             "history": history_list
         }
     }
+
+
+# ===============================
+# 4️⃣ 분석 결과 DB 저장 API (새로 추가)
+# ===============================
+class ResultSaveRequest(BaseModel):
+    user_id: str
+    filename: str
+    pitch_score: int
+    tempo_score: int
+    volume_score: int
+    feedback: str
+
+@router.post("/history/save", summary="분석 결과 DB에 저장하기")
+def save_analysis_result(data: ResultSaveRequest, db: Session = Depends(get_db)):
+    try:
+        # DB의 AnalysisResult 테이블에 새 줄 만들기
+        new_record = models.AnalysisResult(
+            user_id=data.user_id,
+            filename=data.filename,
+            pitch_score=data.pitch_score,
+            tempo_score=data.tempo_score,
+            volume_score=data.volume_score,
+            feedback=data.feedback
+        )
+        
+        db.add(new_record)
+        db.commit()
+        db.refresh(new_record)
+        
+        return {"status": "success", "message": "성공적으로 저장되었습니다."}
+        
+    except Exception as e:
+        db.rollback() # 에러 나면 되돌리기
+        print("결과 저장 중 에러:", e)
+        raise HTTPException(status_code=500, detail="데이터베이스 저장에 실패했습니다.")

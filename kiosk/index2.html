@@ -3,270 +3,331 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>SingPick</title>
+<title>SingPick - 피드백</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet" />
 
 <style>
+/* ================= 🎨 프리미엄 UI 디자인 ================= */
 * {
   box-sizing: border-box;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: 'Pretendard', -apple-system, sans-serif;
 }
 
 body {
   margin: 0;
-  background: #fafafa;
+  background: #f4f7f9; /* 약간 시원한 느낌의 연한 회색 배경 */
+  color: #333;
 }
 
-.page {
-  display: none;
-  padding-bottom: 70px;
-}
-
-.page.active {
-  display: block;
-}
-
-header {
+/* 🌟 상단 바 (앱 느낌 물씬 나게!) */
+.top-bar {
+  height: 70px;
+  background: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 30px;
+  border-bottom: 1px solid #eaeaea;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
   position: fixed;
   top: 0;
   width: 100%;
-  height: 70px;
-  background: #fafafa;
-  text-align: center;
-  line-height: 70px;
-  font-size: 28px;
-  font-weight: bold;
-  z-index: 10;
-  border-bottom: 1px solid #ddd;
+  z-index: 100;
 }
 
+.top-bar .user-info {
+  font-size: 18px;
+  color: #555;
+  display: flex;
+  align-items: center;
+  background: #f8f9fa;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+}
 
-.line {
-  display: none;
+.top-bar .logo {
+  font-weight: 800;
+  font-size: 28px;
+  color: #ff4d6d;
+  letter-spacing: 1px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .content {
+  max-width: 900px; /* 태블릿 화면에 예쁘게 꽉 차는 너비 */
+  margin: 0 auto;
   padding: 20px;
-  padding-top: 90px;
+  padding-top: 100px; /* 상단 바 높이만큼 여백 */
 }
 
+/* 🌟 정보 카드 (그림자와 둥근 모서리로 세련되게) */
 .box {
   background: white;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 15px;
-  min-height: 100px;
-  box-shadow: 0 0 6px rgba(0,0,0,0.05);
+  border-radius: 16px;
+  padding: 24px 30px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+  transition: transform 0.2s ease;
+}
+.box:hover {
+  transform: translateY(-2px);
 }
 
-/* 하단 네비게이션 */
-.nav {
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  height: 60px;
-  background: white;
-  border-top: 1px solid #ddd;
+.box-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 12px;
   display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.nav button {
-  flex: 1;
-  border: none;
-  background: none;
+.box-content {
   font-size: 16px;
+  color: #666;
+  line-height: 1.6;
 }
 
-.nav button.active {
-  color: #ff4d6d;
+/* 🌟 업로드 & 분석 버튼 구역 (촌스러운 input 숨기기) */
+.action-area {
+  text-align: center;
+  margin-top: 30px;
+  padding: 30px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+}
+
+input[type="file"] {
+  display: none; /* 못생긴 기본 파일 선택기 숨김 */
+}
+
+.custom-file-upload {
+  display: inline-block;
+  padding: 12px 24px;
+  cursor: pointer;
+  background: #f1f3f5;
+  color: #333;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  transition: background 0.2s;
+}
+.custom-file-upload:hover { background: #e9ecef; }
+
+.btn-analyze {
+  padding: 12px 32px;
+  font-size: 18px;
   font-weight: bold;
-  border-top: 3px solid #ff4d6d;
+  background: #ff4d6d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-left: 15px;
+  box-shadow: 0 4px 15px rgba(255, 77, 109, 0.3);
+  transition: all 0.2s ease;
+}
+.btn-analyze:hover {
+  background: #e63e5c;
+  transform: scale(1.02);
 }
 
-/* ================= 📊 깔끔한 막대 그래프 스타일 ================= */
+/* ================= 📊 막대 그래프 스타일 ================= */
 .graph-container {
   display: flex;
   flex-direction: column;
-  gap: 12px; /* 항목 간 간격 */
-  margin-top: 15px;
+  gap: 16px; 
+  margin-top: 20px;
 }
 
 .graph-item {
   display: flex;
   align-items: center;
-  justify-content: space-between; /* 이름과 점수를 양끝으로 */
+  justify-content: space-between; 
 }
 
-.graph-label {
-  font-size: 16px;
-  font-weight: bold;
-  color: #555;
-  width: 50px; /* 라벨 너비 고정 */
-}
+.graph-label { font-size: 16px; font-weight: 700; color: #555; width: 60px; }
 
-/* 그래프 총 길이 (회색 배경) */
 .bar-background {
-  flex-grow: 1; /* 남은 공간 꽉 채우기 */
-  height: 12px;
-  background-color: #e0e0e0;
-  border-radius: 6px;
-  margin: 0 15px; /* 라벨과 점수 사이 간격 */
-  overflow: hidden; /* 넘치는 막대 숨기기 */
+  flex-grow: 1; 
+  height: 16px;
+  background-color: #f1f3f5;
+  border-radius: 8px;
+  margin: 0 20px; 
+  overflow: hidden; 
   position: relative;
 }
 
-/* 실제 점수 막대 (색상 배경) */
 .bar-fill {
   height: 100%;
-  background-color: #ddd; /* 기본 색상 */
-  border-radius: 6px;
-  width: 0%; /* 처음엔 0% */
-  transition: width 0.8s ease-out, background-color 0.5s ease; /* 부드러운 애니메이션 */
+  border-radius: 8px;
+  width: 0%; 
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.5s ease; 
 }
 
-.graph-score {
-  font-size: 18px;
-  font-weight: bold;
-  color: #333;
-  width: 50px; /* 점수 너비 고정 */
-  text-align: right;
-}
-
+.graph-score { font-size: 18px; font-weight: 800; color: #111; width: 60px; text-align: right; }
 </style>
 </head>
 
 <body>
 
-<!-- 홈 화면 -->
-<div id="home" class="page active">
-  <header>SING PICK</header>
-  <div class="line"></div>
+<div class="top-bar">
+  <div class="user-info">
+    👤 <span id="display-user" style="margin-left: 6px; color:#ff4d6d;">Guest</span>님
+  </div>
+  <div class="logo">SINGPICK</div>
+  <div style="width: 100px;"></div>
+</div>
 
- <div class="content">
+<div class="content">
 
-  <!-- 곡 추천 -->
   <div class="box">
-    <strong>🎶 곡 추천</strong>
-    <p id="song">추천 가수/곡 표시 예정</p>
+    <div class="box-title">🎶 추천 가수 / 추천 곡</div>
+    <div id="song" class="box-content">음성을 분석하면 딱 맞는 곡을 추천해 드립니다.</div>
   </div>
 
-  <!-- 사용자 분석 피드백 -->
   <div class="box">
-    <strong>🎤 사용자 분석 피드백</strong>
-    <p id="feedback">분석된 피드백 표시 예정</p>
+    <div class="box-title">🎤 AI 상세 피드백</div>
+    <div id="feedback" class="box-content">아래 분석 버튼을 눌러 피드백을 확인하세요.</div>
   </div>
 
-  <!-- 음성 분석 그래프 -->
   <div class="box">
-    <strong>📊 내 음성 그래프</strong>
-    <p id="graph">음정, 음색, 음역대 등의 그래프 표시 예정</p>
+    <div class="box-title">📊 내 음성 그래프</div>
+    <div id="graph" class="box-content">음정, 박자, 성량 데이터가 여기에 표시됩니다.</div>
+  </div>
+
+  <div class="action-area">
+    <label class="custom-file-upload">
+      <input type="file" id="audioFile" accept="audio/wav" onchange="updateFileName()">
+      📁 녹음 파일 선택
+    </label>
+    <span id="file-name" style="margin-left: 10px; color: #888; font-size: 15px;">선택된 파일 없음</span>
+    
+    <button class="btn-analyze" onclick="uploadAndAnalyze()">✨ 분석 시작하기</button>
   </div>
 
 </div>
-</div>
-
-<!-- 마이페이지 -->
-<div id="mypage" class="page">
-  <header>SING PICK</header>
-  <div class="line"></div>
-
-  <div class="content">
-  <div style="font-size:20px; font-weight:bold; margin-bottom:10px;">
-    USER_ID
-  </div>
-  <div style="border-top:1px solid #ddd; margin-bottom:20px;"></div>
-  <div class="box">
-    <strong>My 'Sing Pick'</strong>
-    <p id="history">누적 피드백 기록 표시 예정</p>
-  </div>
-  </div>
-</div>
-
-
-<!-- 네비게이션 -->
-<div class="nav">
-  <button id="nav-home" onclick="showPage('home')">Home</button>
-  <button id="nav-mypage" onclick="showPage('mypage')">My Page</button>
-</div>
-
-<input type="file" id="audioFile" accept="audio/wav">
-<button onclick="uploadAndAnalyze()">분석 시작하기</button>
 
 <script>
-function showPage(page) {
-  // 페이지 전환
-  document.querySelectorAll(".page").forEach(p => {
-    p.classList.remove("active");
-  });
-  document.getElementById(page).classList.add("active");
+// 🌟 1. localStorage 연동 (Guest 문제 해결!)
+const userId = localStorage.getItem('user_id') || new URLSearchParams(window.location.search).get('user_id') || 'Guest';
+const token = localStorage.getItem('token') || new URLSearchParams(window.location.search).get('token') || '';
 
-  // 네비게이션 상태 초기화
-  document.querySelectorAll(".nav button").forEach(b => {
-    b.classList.remove("active");
-  });
+console.log("현재 로그인 유저:", userId);
+document.getElementById('display-user').innerText = userId;
 
-  // 현재 페이지에 맞는 버튼 강조
-  if (page === "home") {
-    document.getElementById("nav-home").classList.add("active");
-  } else if (page === "mypage") {
-    document.getElementById("nav-mypage").classList.add("active");
-  }
+// 파일 선택 시 이름 표시해주는 소소한 센스 기능
+function updateFileName() {
+    const fileInput = document.getElementById('audioFile');
+    const fileNameDisplay = document.getElementById('file-name');
+    if (fileInput.files.length > 0) {
+        fileNameDisplay.innerText = fileInput.files[0].name;
+    } else {
+        fileNameDisplay.innerText = "선택된 파일 없음";
+    }
 }
 
 async function uploadAndAnalyze() {
     const fileInput = document.getElementById('audioFile');
     if (!fileInput.files[0]) {
-        alert("녹음 파일을 선택해주세요!");
+        alert("녹음 파일을 먼저 선택해주세요!");
         return;
     }
 
-    // 1. API에 맞게 폼 데이터 묶기
     const formData = new FormData();
     formData.append("file", fileInput.files[0]);
-    formData.append("reservation_id", 1); // 임시 ID
-    formData.append("reference_song", "No_Doubt"); 
-    
-    // 로딩 중 표시 (옵션)
-    document.getElementById("feedback").innerText = "AI가 분석 중입니다... 잠시만 기다려주세요!";
+    formData.append("reservation_id", 1);
+    formData.append("reference_song", "No_Doubt");
+    formData.append("user_bpm", 120.0);
+
+    const feedbackBox = document.getElementById("feedback");
+    feedbackBox.innerHTML = "<span style='color:#ff4d6d; font-weight:bold;'>AI가 목소리를 분석하고 있습니다... 🎙️⏳</span>";
 
     try {
-        // 2. 원영님의 로컬 서버로 요청 보내기!
         const response = await fetch("http://127.0.0.1:8000/songs/upload", {
             method: "POST",
             body: formData
         });
-        
+
         const result = await response.json();
 
         if (result.status === "success") {
-            document.getElementById("song").innerText = result.data.recommendations; 
-            document.getElementById("feedback").innerText = result.data.feedback;
+            const data = result.data;
+
+            // 1. 피드백 & 추천곡 출력 
+            feedbackBox.style.whiteSpace = "pre-wrap";
+            feedbackBox.innerText = data.feedback || "피드백 데이터가 없습니다.";
             
-            // 🚨 [핵심] 점수 데이터를 막대 그래프로 시각화!
-            const scores = result.data.scores;
+            // (추후 백엔드에서 추천곡이 오면 여기에 연결하세요!)
+            document.getElementById("song").innerHTML = `
+              <strong>가수:</strong> ${data.top_singer || '분석 완료'}<br>
+              <strong>노래:</strong> ${data.top_song || '결과를 확인하세요'}
+            `;
+
+            // 2. 그래프 그리기 
+            const p_score = Math.round((data.pitch_score || 0) * (data.pitch_score <= 1 ? 100 : 1));
+            const t_score = Math.round((data.tempo_score || 0) * (data.tempo_score <= 1 ? 100 : 1));
+            const v_score = Math.round((data.volume_score || 0) * (data.volume_score <= 1 ? 100 : 1));
+
             const graphBox = document.getElementById("graph");
-            
-            // 그래프 HTML 구조 생성
             graphBox.innerHTML = `
                 <div class="graph-container">
-                    ${createBarGraph("음정", scores.pitch)}
-                    ${createBarGraph("박자", scores.tempo)}
-                    ${createBarGraph("성량", scores.volume)}
+                    ${createBarGraph("음정", p_score)}
+                    ${createBarGraph("박자", t_score)}
+                    ${createBarGraph("성량", v_score)}
                 </div>
             `;
 
-            // HTML이 그려진 후, 약간의 시차를 두고 애니메이션 실행!
+            // 3. 애니메이션 실행
             setTimeout(() => {
-                animateBar("pitch-bar", scores.pitch);
-                animateBar("tempo-bar", scores.tempo);
-                animateBar("volume-bar", scores.volume);
+                animateBar("pitch-bar", p_score);
+                animateBar("tempo-bar", t_score);
+                animateBar("volume-bar", v_score);
             }, 100);
 
+            // 🌟 4. 분석 성공 후, DB 저장 
+            if (userId !== 'Guest' && token) {
+                saveResult(data);
+            }
+
         } else {
-            alert("분석 실패: " + result.message);
+            alert("에러 발생: " + result.message);
         }
     } catch (error) {
-        console.error("서버 통신 에러:", error);
-        alert("서버와 연결할 수 없습니다.");
+        console.error("에러:", error);
+        alert("서버 연결에 실패했습니다.");
+        feedbackBox.innerText = "분석 실패";
+    }
+}
+
+async function saveResult(data) {
+    try {
+        const response = await fetch("http://127.0.0.1:8000/users/history/save", { 
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}` 
+            },
+            body: JSON.stringify({
+                user_id: userId,
+                filename: data.filename || "recorded_audio.wav",
+                pitch_score: Math.round((data.pitch_score || 0) * (data.pitch_score <= 1 ? 100 : 1)),
+                tempo_score: Math.round((data.tempo_score || 0) * (data.tempo_score <= 1 ? 100 : 1)),
+                volume_score: Math.round((data.volume_score || 0) * (data.volume_score <= 1 ? 100 : 1)),
+                feedback: data.feedback || "피드백 없음"
+            })
+        });
+
+        if (response.ok) {
+            console.log("✅ 누적 기록 DB 저장 성공!");
+        }
+    } catch (error) {
+        console.error("📡 DB 저장 에러:", error);
     }
 }
 
@@ -285,39 +346,15 @@ function createBarGraph(label, score) {
 
 function animateBar(barId, score) {
     const bar = document.getElementById(barId);
-    if(!bar) return; // 혹시 몰라 안전장치 추가!
+    if(!bar) return;
     
     bar.style.width = `${score}%`;
-
-    if (score >= 90) {
-        bar.style.backgroundColor = "#2F80ED";
-    } else if (score >= 70) {
-        bar.style.backgroundColor = "#27AE60";
-    } else if (score >= 50) {
-        bar.style.backgroundColor = "#F2C94C";
-    } else {
-        bar.style.backgroundColor = "#EB5757";
-    }
+    if (score >= 90) bar.style.backgroundColor = "#2F80ED";
+    else if (score >= 70) bar.style.backgroundColor = "#27AE60";
+    else if (score >= 50) bar.style.backgroundColor = "#F2C94C";
+    else bar.style.backgroundColor = "#EB5757";
 }
-
-window.addEventListener('DOMContentLoaded', async () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const userId = urlParams.get('user_id');
-
-    if (userId) {
-        document.getElementById("feedback").innerText = `${userId}님의 목소리를 분석 중입니다... 🎙️`;
-        
-        // 여기에 나중에 "최근 분석 결과 가져오기" API를 연결하면 
-        // 버튼 안 눌러도 자동으로 촥! 뜹니다.
-        // 지금은 일단 수동 버튼이 있으니 연결 고리만 확인하세요!
-    }
-});
-
-// 페이지 처음 열릴 때 홈으로 세팅
-showPage("home");
 </script>
-
-
 
 </body>
 </html>

@@ -330,7 +330,7 @@ class LoginPage(QWidget):
 
             if response.status_code == 200:
                 print("✅ 로그인 성공!")
-                self.error_label.setText("") # 성공하면 에러 문구 지우기
+                self.error_label.setText("") 
                 data = response.json()
                 
                 user_id = data.get("user_id", "Guest")
@@ -338,13 +338,21 @@ class LoginPage(QWidget):
                 
                 self.fail_count = 0
                 self.go_song(user_id=user_id, token=token)
-            elif response.status_code == 401:
-                self.fail_count += 1
-                # 🚨 2번 요청: 틀리면 화면에 빨간 글씨 띄우기!
-                self.error_label.setText(f"전화번호 또는 비밀번호를 다시 확인해주세요. (실패: {self.fail_count}회)")
-                print(f"❌ 로그인 실패 ({self.fail_count}회)")
+                
             else:
-                self.error_label.setText(f"서버 응답 오류 ({response.status_code})")
+                # 🚨 터미널(검은 창)에 서버가 보낸 진짜 응답을 찍어봅니다!
+                print(f"🚨 서버 원본 에러 응답: {response.text}")
+                
+                try:
+                    error_data = response.json()
+                    # 백엔드의 'detail' 메시지를 쏙 뽑아옵니다.
+                    error_msg = error_data.get("detail", f"알 수 없는 오류 ({response.status_code})")
+                except:
+                    # JSON 형태가 아니면 그냥 생짜 텍스트라도 화면에 던집니다.
+                    error_msg = response.text 
+                
+                self.error_label.setText(str(error_msg))
+
         except Exception as e:
             self.error_label.setText("백엔드 서버에 연결할 수 없습니다.")
             print(f"📡 백엔드 연결 실패: {e}")
@@ -403,7 +411,6 @@ class SongSelectPage(QWidget):
             btn.setStyleSheet("QPushButton { background-color: #213555; color: white; font-size: 18px; font-weight: bold; border-radius: 12px; } QPushButton:pressed { background-color: #068FFF; }")
 
         btn_select.clicked.connect(self.select)
-        # 취소 누르면 결제 안하고 바로 홈으로 (count 0으로 전달)
         btn_home.clicked.connect(lambda: self.go_home(count=0))
 
         btn_row = QHBoxLayout()
@@ -436,7 +443,6 @@ class SongSelectPage(QWidget):
 
     def select(self):
         if self.count > 0:
-            # 🚨 KioskApp의 finish 함수로 곡 수를 넘겨줍니다!
             self.go_home(count=self.count)
         else:
             print("1곡 이상 선택해주세요!")
@@ -494,8 +500,7 @@ class KioskApp(QWidget):
     def finish(self, count):
         if count > 0:
             print(f"{self.current_user_id}님, {count}곡 결제 완료. 부스 입장!")
-            
-            # 파이썬이 브라우저를 띄우면서 URL 뒤에 데이터를 주렁주렁 매달아 보냅니다!
+        
             url = f"http://127.0.0.1:8000/kiosk_static/index.html?user_id={self.current_user_id}&token={self.current_token}&songs={count}"
             webbrowser.open(url)
             
