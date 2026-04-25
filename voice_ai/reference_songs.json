@@ -1,0 +1,277 @@
+[
+  {
+    "title": "우주를 건너",
+    "artist": "백예린",
+    "embedding_file": "백예린_Across_the_Universe_embedding.npy"
+  },
+  {
+    "title": "Antifreeze",
+    "artist": "백예린",
+    "embedding_file": "백예린_Antifreeze_embedding.npy"
+  },
+  {
+    "title": "Bye_bye_my_blue",
+    "artist": "백예린",
+    "embedding_file": "백예린_Bye_bye_my_blue_embedding.npy"
+  },
+  {
+    "title": "우리의 잘못은 아닐거야",
+    "artist": "백예린",
+    "embedding_file": "백예린_Maybe_Its_Not_Our_Fault_embedding.npy"
+  },
+  {
+    "title": "Square",
+    "artist": "백예린",
+    "embedding_file": "백예린_Square_embedding.npy"
+  },
+  {
+    "title": "나만 봄",
+    "artist": "볼빨간 사춘기",
+    "embedding_file": "볼빨간사춘기_Bom_embedding.npy"
+  },
+  {
+    "title": "사람할 수밖에",
+    "artist": "볼빨간 사춘기",
+    "embedding_file": "볼빨간사춘기_Eternal_love_embedding.npy"
+  },
+  {
+    "title": "썸 탈거야",
+    "artist": "볼빨간 사춘기",
+    "embedding_file": "볼빨간사춘기_Some_embedding.npy"
+  },
+  {
+    "title": "좋다고 말해",
+    "artist": "볼빨간 사춘기",
+    "embedding_file": "볼빨간사춘기_Tell_Me_You_Love_Me_embedding.npy"
+  },
+  {
+    "title": "처음부터 너와 나",
+    "artist": "볼빨간 사춘기",
+    "embedding_file": "볼빨간사춘기_You_and_I_from_the_beginning_embedding.npy"
+  },
+  {
+    "title": "밤양갱",
+    "artist": "비비",
+    "embedding_file": "비비_Bam_Yang_Gang_embedding.npy"
+  },
+  {
+    "title": "Maybe_if",
+    "artist": "비비",
+    "embedding_file": "비비_Maybe_if_embedding.npy"
+  },
+  {
+    "title": "왔다갔는교",
+    "artist": "비비",
+    "embedding_file": "비비_Midnight_Cruise_embedding.npy"
+  },
+  {
+    "title": "일기장",
+    "artist": "비비",
+    "embedding_file": "비비_Mom's_diary_embedding.npy"
+  },
+  {
+    "title": "책방오빠 문학소녀",
+    "artist": "비비",
+    "embedding_file": "비비_Scott_and_Zelda_embedding.npy"
+  },
+  {
+    "title": "좋은 날",
+    "artist": "아이유",
+    "embedding_file": "아이유_A_good_day_embedding.npy"
+  },
+  {
+    "title": "Blueming",
+    "artist": "아이유",
+    "embedding_file": "아이유_Blueming_embedding.npy"
+  },
+  {
+    "title": "Love_wins_all",
+    "artist": "아이유",
+    "embedding_file": "아이유_Love_wins_all_embedding.npy"
+  },
+  {
+    "title": "밤편지",
+    "artist": "아이유",
+    "embedding_file": "아이유_Through_the_Night_embedding.npy"
+  },
+  {
+    "title": "너와 나",
+    "artist": "아이유",
+    "embedding_file": "아이유_You&I_embedding.npy"
+  },
+  {
+    "title": "손대지마",
+    "artist": "에일리",
+    "embedding_file": "에일리_Don't_Touch_Me_embedding.npy"
+  },
+  {
+    "title": "Heaven",
+    "artist": "에일리",
+    "embedding_file": "에일리_Heaven_embedding.npy"
+  },
+  {
+    "title": "보여줄게",
+    "artist": "에일리",
+    "embedding_file": "에일리_I_Will_Show_You_embedding.npy"
+  },
+  {
+    "title": "노래가 늘었어",
+    "artist": "에일리",
+    "embedding_file": "에일리_Singing_Got_Better_embedding.npy"
+  },
+  {
+    "title": "U&I",
+    "artist": "에일리",
+    "embedding_file": "에일리_U&I_embedding.npy"
+  },
+  {
+    "title": "벌써 12시",
+    "artist": "청하",
+    "embedding_file": "청하_Gotta_Go_embedding.npy"
+  },
+  {
+    "title": "LOVE_U",
+    "artist": "청하",
+    "embedding_file": "청하_LOVE_U_embedding.npy"
+  },
+  {
+    "title": "Roller_Coaster",
+    "artist": "청하",
+    "embedding_file": "청하_Roller_Coaster_embedding.npy"
+  },
+  {
+    "title": "Snapping",
+    "artist": "청하",
+    "embedding_file": "청하_Snapping_embedding.npy"
+  },
+  {
+    "title": "STRESS",
+    "artist": "청하",
+    "embedding_file": "청하_STRESS_embedding.npy"
+  },
+  {
+    "title": "착하다는 말이 제일 싫어",
+    "artist": "최예나",
+    "embedding_file": "최예나_Being_a_Good_Girl_Hurts_embedding.npy"
+  },
+  {
+    "title": "캐치캐치",
+    "artist": "최예나",
+    "embedding_file": "최예나_CatchCatch_embedding.npy"
+  },
+  {
+    "title": "Good_Morning",
+    "artist": "최예나",
+    "embedding_file": "최예나_Good_Morning_embedding.npy"
+  },
+  {
+    "title": "네모네모",
+    "artist": "최예나",
+    "embedding_file": "최예나_NEMONEMO_embedding.npy"
+  },
+  {
+    "title": "SMARTPHONE",
+    "artist": "최예나",
+    "embedding_file": "최예나_SMARTPHONE_embedding.npy"
+  },
+  {
+    "title": "우리만은",
+    "artist": "최유리",
+    "embedding_file": "최유리_At_least_only_we_embedding.npy"
+  },
+  {
+    "title": "숲",
+    "artist": "최유리",
+    "embedding_file": "최유리_Forest_embedding.npy"
+  },
+  {
+    "title": "잘 지내자 우리",
+    "artist": "최유리",
+    "embedding_file": "최유리_Let's_Stay_Well_embedding.npy"
+  },
+  {
+    "title": "밤바다",
+    "artist": "최유리",
+    "embedding_file": "최유리_Night_Sea_embedding.npy"
+  },
+  {
+    "title": "동그라미",
+    "artist": "최유리",
+    "embedding_file": "최유리_shape_embedding.npy"
+  },
+  {
+    "title": "11:11",
+    "artist": "태연",
+    "embedding_file": "태연_11_11_embedding.npy"
+  },
+  {
+    "title": "그대라는 시",
+    "artist": "태연",
+    "embedding_file": "태연_All_About_You_embedding.npy"
+  },
+  {
+    "title": "Fine",
+    "artist": "태연",
+    "embedding_file": "태연_Fine_embedding.npy"
+  },
+  {
+    "title": "사계",
+    "artist": "태연",
+    "embedding_file": "태연_Four_Seasons_embedding.npy"
+  },
+  {
+    "title": "To.X",
+    "artist": "태연",
+    "embedding_file": "태연_To.X_embedding.npy"
+  },
+  {
+    "title": "0+0",
+    "artist": "한로로",
+    "embedding_file": "한로로_0+0_embedding.npy"
+  },
+  {
+    "title": "금붕어",
+    "artist": "한로로",
+    "embedding_file": "한로로_Goldfis_embedding.npy"
+  },
+  {
+    "title": "사랑하게 될 거야",
+    "artist": "한로로",
+    "embedding_file": "한로로_Landing_in_Love_embedding.npy"
+  },
+  {
+    "title": "입춘",
+    "artist": "한로로",
+    "embedding_file": "한로로_Let_Me_Love_My_Youth_embedding.npy"
+  },
+  {
+    "title": "정류장",
+    "artist": "한로로",
+    "embedding_file": "한로로_The_last_stop_of_our_pain_embedding.npy"
+  },
+  {
+    "title": "내 맘을 볼 수 있나요",
+    "artist": "헤이즈",
+    "embedding_file": "헤이즈_Can_You_See_My_Heart_embedding.npy"
+  },
+  {
+    "title": "널 너무 모르고",
+    "artist": "헤이즈",
+    "embedding_file": "헤이즈_Don't_Know_You_embedding.npy"
+  },
+  {
+    "title": "헤픈 우연",
+    "artist": "헤이즈",
+    "embedding_file": "헤이즈_Happen_embedding.npy"
+  },
+  {
+    "title": "비가 오는 날엔",
+    "artist": "헤이즈",
+    "embedding_file": "헤이즈_On_Rainy_Days_embedding.npy"
+  },
+  {
+    "title": "저 별",
+    "artist": "헤이즈",
+    "embedding_file": "헤이즈_Star_embedding.npy"
+  }
+]

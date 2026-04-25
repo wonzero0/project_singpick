@@ -1,0 +1,104 @@
+[
+    {
+        "voice_name": "voice1_mrX",
+        "scores": {
+            "pitch": 90,
+            "tempo": 70,
+            "volume": 90
+        },
+        "analysis_values": {
+            "pitch_hz_avg": 298.24,
+            "tempo_bpm": 93.75,
+            "volume_rms_avg": 0.0854,
+            "pitch_min": 65.41,
+            "pitch_max": 502.52,
+            "pitch_comfort_min": 95.02,
+            "pitch_comfort_max": 450.28
+        }
+    },
+    {
+        "voice_name": "voice2_mr",
+        "scores": {
+            "pitch": 90,
+            "tempo": 70,
+            "volume": 75
+        },
+        "analysis_values": {
+            "pitch_hz_avg": 315.63,
+            "tempo_bpm": 93.75,
+            "volume_rms_avg": 0.0765,
+            "pitch_min": 65.41,
+            "pitch_max": 523.25,
+            "pitch_comfort_min": 193.75,
+            "pitch_comfort_max": 463.48
+        }
+    },
+    {
+        "voice_name": "voice3_slow",
+        "scores": {
+            "pitch": 90,
+            "tempo": 100,
+            "volume": 40
+        },
+        "analysis_values": {
+            "pitch_hz_avg": 202.54,
+            "tempo_bpm": 125.0,
+            "volume_rms_avg": 0.0252,
+            "pitch_min": 65.41,
+            "pitch_max": 305.78,
+            "pitch_comfort_min": 65.41,
+            "pitch_comfort_max": 275.59
+        }
+    },
+    {
+        "voice_name": "voice4_fast",
+        "scores": {
+            "pitch": 90,
+            "tempo": 85,
+            "volume": 75
+        },
+        "analysis_values": {
+            "pitch_hz_avg": 277.06,
+            "tempo_bpm": 144.23,
+            "volume_rms_avg": 0.0625,
+            "pitch_min": 65.41,
+            "pitch_max": 369.99,
+            "pitch_comfort_min": 237.98,
+            "pitch_comfort_max": 312.93
+        }
+    },
+    {
+        "voice_name": "voice5_small",
+        "scores": {
+            "pitch": 90,
+            "tempo": 100,
+            "volume": 60
+        },
+        "analysis_values": {
+            "pitch_hz_avg": 285.32,
+            "tempo_bpm": 130.81,
+            "volume_rms_avg": 0.0359,
+            "pitch_min": 201.74,
+            "pitch_max": 422.56,
+            "pitch_comfort_min": 213.74,
+            "pitch_comfort_max": 358.84
+        }
+    },
+    {
+        "voice_name": "voice6_big",
+        "scores": {
+            "pitch": 90,
+            "tempo": 100,
+            "volume": 90
+        },
+        "analysis_values": {
+            "pitch_hz_avg": 278.77,
+            "tempo_bpm": 130.81,
+            "volume_rms_avg": 0.1238,
+            "pitch_min": 65.41,
+            "pitch_max": 405.82,
+            "pitch_comfort_min": 207.65,
+            "pitch_comfort_max": 355.33
+        }
+    }
+]
