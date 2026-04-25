@@ -86,4 +86,4 @@ if __name__ == "__main__":
     print("🎤 추천 가수 결과 (음색 + 음역대 반영)")
     print(f"사용자 편안 음역: {user_features['pitch_comfort_min']} ~ {user_features['pitch_comfort_max']} Hz")
     for i, r in enumerate(top_songs, start=1):
-        print(f"Top-{i}: {r['artist']} - {r['song']} (유사도: {r['similarity']})")
+        print(f"Top-{i}: {r['artist']} - {r['song']} (유사도: {r['similarity']})") 
