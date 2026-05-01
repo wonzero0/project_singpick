@@ -7,7 +7,7 @@ from pathlib import Path
 
 env_path = Path(__file__).resolve().parent.parent / '.env'
 load_dotenv(dotenv_path=env_path)
-SECRET_KEY = os.getenv("AES_SECRET_KEY").encode()
+SECRET_KEY = (os.getenv("AES_SECRET_KEY") or "test_secret_key").encode()
 
 class AESCipher:
     def __init__(self, key):

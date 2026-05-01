@@ -61,7 +61,11 @@ app.add_middleware(
 # ===============================
 # 라우터 등록
 # ===============================
+<<<<<<< HEAD
 app.include_router(mr.router, prefix="/youtube", tags=["YouTube API"])
+=======
+# app.include_router(mr.router, prefix="/youtube", tags=["YouTube API"])
+>>>>>>> origin/project-singpick
 app.include_router(users.router)
 app.include_router(booth.router)
 app.include_router(songs.router)

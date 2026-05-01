@@ -4,8 +4,12 @@ from sqlalchemy.orm import sessionmaker
 
 
 # 형식: mysql+pymysql://아이디:비밀번호@주소:포트/데이터베이스이름
+<<<<<<< HEAD
 SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:root@127.0.0.1:3306/singpick_db"
 
+=======
+SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root@127.0.0.1:3306/singpick_db" 
+>>>>>>> origin/project-singpick
 # 2. 엔진 생성 (파이썬과 DB를 연결하는 자동차 엔진)
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 

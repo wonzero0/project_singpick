@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from google import genai
+#from google import genai
 from dotenv import load_dotenv
 
 # 1. 경로 설정
@@ -18,10 +18,7 @@ if not api_key:
     api_key = os.getenv("GEMINI_API_KEY")
 
 # 3. AI 클라이언트 생성 (test1.py에서 검증된 방식 사용)
-if api_key:
-    client = genai.Client(api_key=api_key.strip())
-else:
-    client = None
+client = None
     
 MODEL_ID = "gemini-2.5-flash"
 
