@@ -17,6 +17,9 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 ALLOWED_EXTENSIONS = {".wav", ".mp3", ".mp4", ".m4a", ".flac"}
 
 
+# ============================================
+# 🎵 노래 업로드 + AI 분석
+# ============================================
 @router.post("/upload")
 async def upload_song(
     file: UploadFile = File(...),
@@ -50,18 +53,18 @@ async def upload_song(
         similar_artists = result.get("similar_artists", [])
 
         # =========================
-        # 최종 점수
+        # 최종 점수 계산
         # =========================
         score = calculate_score(analysis_values)
 
         # =========================
-        # DB 저장 (🔥 수정 완료)
+        # DB 저장
         # =========================
         new_analysis = models.AnalysisResult(
             user_id=user_id,
             filename=file.filename,
 
-            score=score,   # ✅ 여기만 존재해야 정상
+            score=score,
 
             pitch_hz_avg=analysis_values.get("pitch_hz_avg", 0.0),
             tempo_bpm=analysis_values.get("tempo_bpm", 0.0),
@@ -83,15 +86,91 @@ async def upload_song(
         db.commit()
         db.refresh(new_analysis)
 
+        # =========================
+        # 🔥 누적 히스토리 조회
+        # =========================
+        all_histories = db.query(models.AnalysisResult).filter(
+            models.AnalysisResult.user_id == user_id
+        ).all()
+
+        if len(all_histories) == 0:
+            raise HTTPException(status_code=500, detail="히스토리 조회 실패")
+
+        # =========================
+        # 🔥 누적 평균 계산
+        # =========================
+        avg_score = sum(h.score for h in all_histories) / len(all_histories)
+
+        avg_pitch = (
+            sum(h.pitch_hz_avg for h in all_histories)
+            / len(all_histories)
+        )
+
+        avg_tempo = (
+            sum(h.tempo_bpm for h in all_histories)
+            / len(all_histories)
+        )
+
+        avg_volume = (
+            sum(h.volume_rms_avg for h in all_histories)
+            / len(all_histories)
+        )
+
+        # =========================
+        # 🔥 누적 피드백 생성
+        # =========================
+        overall_feedback = ""
+
+        if avg_score >= 90:
+            overall_feedback += "전체적으로 매우 안정적인 가창 능력을 유지하고 있습니다. "
+
+        elif avg_score >= 75:
+            overall_feedback += "방문할수록 노래 실력이 점차 향상되고 있습니다. "
+
+        else:
+            overall_feedback += "음정과 박자 안정성 연습이 더 필요합니다. "
+
+        if avg_pitch >= 320:
+            overall_feedback += "고음 영역에서 강점을 보입니다."
+
+        elif avg_pitch >= 250:
+            overall_feedback += "중음 영역이 안정적입니다."
+
+        else:
+            overall_feedback += "저음 중심의 음역대를 가지고 있습니다."
+
+        # =========================
+        # 응답 반환
+        # =========================
         return {
             "status": "success",
             "message": f"{user_id} 분석 완료",
+
             "data": {
+
+                # 현재 방문 점수
                 "scores": {
                     "total_score": score
                 },
+
+                # 현재 분석값
                 "analysis_values": analysis_values,
+
+                # 현재 곡 피드백
                 "feedback": feedback,
+
+                # 🔥 누적 피드백
+                "overall_feedback": overall_feedback,
+
+                # 🔥 누적 평균 분석
+                "overall_analysis": {
+                    "history_count": len(all_histories),
+                    "avg_score": round(avg_score, 1),
+                    "avg_pitch": round(avg_pitch, 1),
+                    "avg_tempo": round(avg_tempo, 1),
+                    "avg_volume": round(avg_volume, 4)
+                },
+
                 "recommendations": recommendations,
                 "similar_songs": similar_songs,
                 "similar_artists": similar_artists
@@ -105,3 +184,37 @@ async def upload_song(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================
+# 📜 사용자 과거 기록 조회
+# ============================================
+@router.get("/history/{user_id}")
+def get_user_history(
+    user_id: str,
+    db: Session = Depends(get_db)
+):
+
+    histories = db.query(models.AnalysisResult).filter(
+        models.AnalysisResult.user_id == user_id
+    ).order_by(models.AnalysisResult.created_at.desc()).all()
+
+    result = []
+
+    for h in histories:
+        result.append({
+            "id": h.id,
+            "date": h.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            "filename": h.filename,
+            "score": h.score,
+            "feedback": h.feedback,
+            "pitch_hz_avg": h.pitch_hz_avg,
+            "tempo_bpm": h.tempo_bpm,
+            "volume_rms_avg": h.volume_rms_avg
+        })
+
+    return {
+        "status": "success",
+        "count": len(result),
+        "data": result
+    }
