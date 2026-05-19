@@ -186,6 +186,7 @@ class SignUpPage(QWidget):
         self.user_id_input.clear()
         self.phone_input.clear()
         self.password_input.clear()
+        self.error_label.setText("")
         while self.kb_box.count():
             item = self.kb_box.takeAt(0)
             if item.widget():
@@ -205,6 +206,12 @@ class SignUpPage(QWidget):
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText("    비밀번호 (숫자 6자리)")
         self.password_input.setMaxLength(6)
+        self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
+
+        self.error_label = QLabel("")
+        self.error_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.error_label.setStyleSheet("font-size:16px; color:#D32F2F;")
+        self.error_label.setWordWrap(True)
 
         for i in (self.user_id_input, self.phone_input, self.password_input):
             i.setFixedHeight(25)
@@ -241,6 +248,7 @@ class SignUpPage(QWidget):
         btn_row.addWidget(btn_home)
 
         main.addWidget(title)
+        main.addWidget(self.error_label)
         main.addWidget(self.user_id_input)
         main.addWidget(self.phone_input)
         main.addWidget(self.password_input)
@@ -269,12 +277,15 @@ class SignUpPage(QWidget):
         phone = self.phone_input.text().strip()
         password = self.password_input.text().strip()
 
-        if not (user_id.isalpha() and 4 <= len(user_id) <= 20):
-            return print("오류: 아이디 양식 틀림")
+        if not (user_id.isalnum() and 4 <= len(user_id) <= 20):
+            self.error_label.setText("오류: 아이디 양식 틀림")
+            return
         if len(phone) != 11 or not phone.isdigit():
-            return print("오류: 전화번호 양식 틀림")
+            self.error_label.setText("오류: 전화번호 양식 틀림")
+            return
         if len(password) != 6 or not password.isdigit():
-            return print("오류: 비밀번호 양식 틀림")
+            self.error_label.setText("오류: 비밀번호 양식 틀림")
+            return
 
         payload = {"user_id": user_id, "phone": phone, "password": password}
         try:
@@ -284,8 +295,17 @@ class SignUpPage(QWidget):
                 self.reset()
                 self.go_home()
             else:
+                error_message = "회원가입 실패"
+                try:
+                    error_detail = res.json().get("detail")
+                    if error_detail:
+                        error_message = error_detail
+                except Exception:
+                    pass
+                self.error_label.setText(error_message)
                 print(f"❌ 가입 실패: {res.json()}")
         except Exception as e:
+            self.error_label.setText("서버 연결 실패: 연결을 확인해주세요.")
             print(f"📡 서버 연결 실패: {e}")
 
 
@@ -545,7 +565,18 @@ class KioskApp(QWidget):
         for p in (self.home, self.signup, self.login, self.song):
             self.stack.addWidget(p)
 
+    def send_led_command(self, color: str):
+        try:
+            requests.post(
+                "http://127.0.0.1:8000/kiosk/led",
+                json={"color": color},
+                timeout=1,
+            )
+        except Exception as e:
+            print(f"LED command failed: {e}")
+
     def show_home(self):
+        self.send_led_command("GREEN")
         self.stack.setCurrentWidget(self.home)
 
     def show_signup(self):
@@ -563,6 +594,7 @@ class KioskApp(QWidget):
 
         self.song.reset()
         self.stack.setCurrentWidget(self.song)
+        self.send_led_command("RED")
 
     def finish(self, count):
         if count > 0:
@@ -588,13 +620,13 @@ class KioskApp(QWidget):
             self.current_token = ""
             self.current_phone = None
 
-            self.stack.setCurrentWidget(self.home)
+            self.show_home()
             self.home.show_notice()
         else:
             self.current_user_id = "Guest"
             self.current_token = ""
             self.current_phone = None
-            self.stack.setCurrentWidget(self.home)
+            self.show_home()
 
 
 if __name__ == "__main__":

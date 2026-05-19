@@ -68,10 +68,10 @@ void setLedColor(bool redOn, bool greenOn, bool blueOn) {
 }
 
 void updateStateByCommand(const String &command) {
-  if (command.equalsIgnoreCase("RESERVATION") || command.equalsIgnoreCase("RED")) {
+  if (command.equalsIgnoreCase("RESERVATION") || command.equalsIgnoreCase("RED") || command.equalsIgnoreCase("SONG_SELECT")) {
     setBoothState(STATE_RESERVATION);
     Serial.println("State: RESERVATION (Red LED ON)");
-  } else if (command.equalsIgnoreCase("AVAILABLE") || command.equalsIgnoreCase("GREEN")) {
+  } else if (command.equalsIgnoreCase("AVAILABLE") || command.equalsIgnoreCase("GREEN") || command.equalsIgnoreCase("HOME") || command.equalsIgnoreCase("RESET")) {
     setBoothState(STATE_AVAILABLE);
     Serial.println("State: AVAILABLE (Green LED ON)");
   } else if (command.equalsIgnoreCase("UNAVAILABLE") || command.equalsIgnoreCase("BLUE")) {

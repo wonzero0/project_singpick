@@ -204,7 +204,10 @@ export function Feedback() {
 
               {/* 예 */}
               <button
-                onClick={() => {}}
+                onClick={() => {
+                  setShowExitModal(false);
+                  handleGoHome();
+                }}
                 className="flex-1 py-4 rounded-2xl bg-cyan-600 hover:bg-cyan-500 transition-all text-lg font-bold"
               >
                 예
