@@ -151,6 +151,8 @@ def enter_booth(selection: SongSelect, db: Session = Depends(get_db)):
             }
         )
 
+    send_arduino_command("RESERVATION")
+
     return {
         "status": "success",
         "message": f"{user_type} 입장 처리 완료",
@@ -159,7 +161,6 @@ def enter_booth(selection: SongSelect, db: Session = Depends(get_db)):
             "room_status": "active"
         }
     }
-
 
 @router.post("/led")
 def set_led(command: LedCommand):
