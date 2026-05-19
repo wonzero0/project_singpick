@@ -1,7 +1,12 @@
-// RGB pin settings
-const int redPin = 9;
-const int greenPin = 10;
-const int bluePin = 11;
+// RGB 1번 LED 핀 설정 (예: 내부용)
+const int redPin1 = 3;
+const int greenPin1 = 5;
+const int bluePin1 = 6;
+
+// RGB 2번 LED 핀 설정 (예: 외부용)
+const int redPin2 = 9;
+const int greenPin2 = 10;
+const int bluePin2 = 11;
 
 enum BoothState {
   STATE_OFF,
@@ -13,14 +18,24 @@ enum BoothState {
 BoothState currentState = STATE_OFF;
 
 void setup() {
-  pinMode(redPin, OUTPUT);
-  pinMode(greenPin, OUTPUT);
-  pinMode(bluePin, OUTPUT);
+  // 1번 LED 핀 출력 설정
+  pinMode(redPin1, OUTPUT);
+  pinMode(greenPin1, OUTPUT);
+  pinMode(bluePin1, OUTPUT);
+
+  // 2번 LED 핀 출력 설정
+  pinMode(redPin2, OUTPUT);
+  pinMode(greenPin2, OUTPUT);
+  pinMode(bluePin2, OUTPUT);
 
   // 초기화 시 모든 LED 끄기 (Anode 방식이므로 HIGH가 OFF)
-  digitalWrite(redPin, HIGH);
-  digitalWrite(greenPin, HIGH);
-  digitalWrite(bluePin, HIGH);
+  digitalWrite(redPin1, HIGH);
+  digitalWrite(greenPin1, HIGH);
+  digitalWrite(bluePin1, HIGH);
+
+  digitalWrite(redPin2, HIGH);
+  digitalWrite(greenPin2, HIGH);
+  digitalWrite(bluePin2, HIGH);
 
   Serial.begin(9600);
   
@@ -60,23 +75,29 @@ void setBoothState(BoothState state) {
   }
 }
 
-// Anode LED 특성 반영 (true일 때 LOW를 줘서 점등)
+// [핵심 수정 부분] Anode LED 특성 반영 (true일 때 LOW를 줘서 1번, 2번 LED 동시 점등)
 void setLedColor(bool redOn, bool greenOn, bool blueOn) {
-  digitalWrite(redPin, redOn ? LOW : HIGH);
-  digitalWrite(greenPin, greenOn ? LOW : HIGH);
-  digitalWrite(bluePin, blueOn ? LOW : HIGH);
+  // 1번 LED 제어
+  digitalWrite(redPin1, redOn ? LOW : HIGH);
+  digitalWrite(greenPin1, greenOn ? LOW : HIGH);
+  digitalWrite(bluePin1, blueOn ? LOW : HIGH);
+
+  // 2번 LED 제어 (똑같은 상태값을 2번 핀들에도 그대로 쏴줍니다!)
+  digitalWrite(redPin2, redOn ? LOW : HIGH);
+  digitalWrite(greenPin2, greenOn ? LOW : HIGH);
+  digitalWrite(bluePin2, blueOn ? LOW : HIGH);
 }
 
 void updateStateByCommand(const String &command) {
   if (command.equalsIgnoreCase("RESERVATION") || command.equalsIgnoreCase("RED") || command.equalsIgnoreCase("SONG_SELECT")) {
     setBoothState(STATE_RESERVATION);
-    Serial.println("State: RESERVATION (Red LED ON)");
+    Serial.println("State: RESERVATION (All Red LEDs ON)");
   } else if (command.equalsIgnoreCase("AVAILABLE") || command.equalsIgnoreCase("GREEN") || command.equalsIgnoreCase("HOME") || command.equalsIgnoreCase("RESET")) {
     setBoothState(STATE_AVAILABLE);
-    Serial.println("State: AVAILABLE (Green LED ON)");
+    Serial.println("State: AVAILABLE (All Green LEDs ON)");
   } else if (command.equalsIgnoreCase("UNAVAILABLE") || command.equalsIgnoreCase("BLUE")) {
     setBoothState(STATE_UNAVAILABLE);
-    Serial.println("State: UNAVAILABLE (Blue LED ON)");
+    Serial.println("State: UNAVAILABLE (All Blue LEDs ON)");
   } else if (command.equalsIgnoreCase("OFF")) {
     setBoothState(STATE_OFF);
     Serial.println("State: OFF (All LEDs OFF)");

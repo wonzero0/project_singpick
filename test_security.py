@@ -6,8 +6,8 @@ def run_final_test():
     
     # 1. .env 키 로드 확인
     if SECRET_KEY:
-        # 보안을 위해 앞 4자리만 출력해봅니다.
-        print(f"✅ .env 키 로드 성공! (Key 시작부분: {SECRET_KEY[:4].decode()}...)")
+        # [수정] .decode() 대신 .hex()를 쓰면 바이트가 깨지지 않고 이쁜 16진수로 안전하게 출력됩니다!
+        print(f"✅ .env 키 로드 성공! (Key 시작부분 hex: {SECRET_KEY[:4].hex()}...)")
     else:
         print("❌ .env 키 로드 실패! 파일을 확인해주세요.")
         return
