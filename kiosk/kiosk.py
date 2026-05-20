@@ -1,5 +1,4 @@
-
-import sys
+import sys 
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QPushButton,
     QVBoxLayout, QHBoxLayout, QLineEdit,
@@ -280,7 +279,7 @@ class SignUpPage(QWidget):
         if not (user_id.isalnum() and 4 <= len(user_id) <= 20):
             self.error_label.setText("오류: 아이디 양식 틀림")
             return
-        if len(phone) != 11 or not phone.isdigit():
+        if len(콜) != 11 or not phone.isdigit():
             self.error_label.setText("오류: 전화번호 양식 틀림")
             return
         if len(password) != 6 or not password.isdigit():
@@ -555,6 +554,9 @@ class KioskApp(QWidget):
         layout.addWidget(self.stack)
         self.setLayout(layout)
         self.setStyleSheet("background-color:#DDE6ED;")
+        
+        # 앱 시작시 LED 상태 GREEN 설정
+        self.send_led_command("GREEN")
 
     def init_pages(self):
         self.home = HomePage(self.show_signup, self.show_login, self.show_song)
@@ -579,11 +581,17 @@ class KioskApp(QWidget):
         self.send_led_command("GREEN")
         self.stack.setCurrentWidget(self.home)
 
+    def show_home_with_led(self, color: str):
+        self.send_led_command(color)
+        self.stack.setCurrentWidget(self.home)
+
     def show_signup(self):
+        self.send_led_command("GREEN")
         self.signup.reset()
         self.stack.setCurrentWidget(self.signup)
 
     def show_login(self):
+        self.send_led_command("GREEN")
         self.login.reset()
         self.stack.setCurrentWidget(self.login)
 
@@ -620,12 +628,14 @@ class KioskApp(QWidget):
             self.current_token = ""
             self.current_phone = None
 
-            self.show_home()
+            # 노래 중, 홈(이용 중 대기) 상태이므로 RED 유지하며 홈으로 이동
+            self.show_home_with_led("RED")
             self.home.show_notice()
         else:
             self.current_user_id = "Guest"
             self.current_token = ""
             self.current_phone = None
+            # 곡 선택을 취소하고 나가는 것이므로 이용 완료/종료 처리되어 GREEN으로 변경
             self.show_home()
 
 

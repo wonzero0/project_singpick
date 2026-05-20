@@ -174,8 +174,12 @@ export function Feedback() {
 
             <div className="bg-gradient-to-br from-slate-500/10 to-slate-600/10 border border-slate-400/30 rounded-2xl p-8 flex flex-col items-center">
 
-              <div className="w-48 h-48 bg-white rounded-2xl flex items-center justify-center mb-4">
-                <QrCode size={120} className="text-slate-900" />
+              <div className="w-48 h-48 bg-white rounded-2xl flex items-center justify-center mb-4 p-4 shadow-inner">
+                <img 
+                  src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=http://192.168.0.189:8000/web"   // 실제 IPv4 주소로 변경
+                  alt="SingPick Mobile URL QR"
+                  className="w-full h-full object-contain rounded-lg"
+                  />
               </div>
 
               <p className="text-lg text-center text-slate-400">
@@ -189,7 +193,7 @@ export function Feedback() {
       </div>
 
       {/* ========================= */}
-      {/* 🔥 이용 종료 모달 */}
+      {/* 이용 종료 모달 */}
       {/* ========================= */}
       {showExitModal && (
         <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center px-6">

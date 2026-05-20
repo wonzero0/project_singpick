@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse
 from fastapi.routing import APIRoute
 import sys
 import os
+from fastapi.responses import HTMLResponse
 sys.path.append(os.path.join(os.path.dirname(__file__), "ai_module"))
 
 # ===============================
@@ -58,6 +59,10 @@ ASSETS_DIR = os.path.join(DIST_DIR, "assets")
 if os.path.exists(ASSETS_DIR):
     app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
 
+# dist 폴더 루트에 있는 정적 파일(logo.png 등)을 직접 제공
+if os.path.exists(DIST_DIR):
+    app.mount("/dist", StaticFiles(directory=DIST_DIR), name="dist")
+
 
 # ===============================
 # 임시 노래 데이터 초기화 (10곡)
@@ -101,6 +106,39 @@ for route in app.routes:
 
 # 추가로 방어해야 할 정적 파일 경로 및 문서 주소 수동 등록
 API_ROUTES.update(["docs", "redoc", "openapi.json", "mr_files", "assets"])
+
+@app.get("/qr", response_class=HTMLResponse)
+def show_qr_page():
+    # (컴퓨터 터미널에 ipconfig를 치면 나오는 IPv4 주소입니다.)
+    my_computer_ip = "192.168.0.189"  # 본인 IP로 수정 필수
+    
+    target_url = f"http://{my_computer_ip}:8000/"
+    
+    # 오픈소스 QR 코드 API를 이용해 화면에 QR을 이쁘게 띄워주는 HTML
+    html_content = f"""
+    <html>
+        <head>
+            <title>SingPick QR Code Portal</title>
+            <style>
+                body {{ font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background-color: #f7f9fa; margin: 0; }}
+                .card {{ background: white; padding: 40px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); text-align: center; }}
+                img {{ width: 250px; height: 250px; margin: 20px 0; border: 4px solid #2F7C31; border-radius: 12px; }}
+                h1 {{ color: #111; font-size: 22px; margin-bottom: 5px; }}
+                p {{ color: #666; font-size: 14px; margin-bottom: 25px; }}
+                .url-box {{ background: #eee; padding: 10px 15px; border-radius: 8px; font-family: monospace; font-size: 14px; color: #333; }}
+            </style>
+        </head>
+        <body>
+            <div class="card">
+                <h1>🎤 SingPick 모바일 연결 큐알</h1>
+                <p>스마트폰 카메라로 아래 QR 코드를 스캔하세요!<br>(주의: 컴퓨터와 휴대폰이 같은 와이파이에 연결되어 있어야 합니다)</p>
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={target_url}" alt="QR Code">
+                <div class="url-box">{target_url}</div>
+            </div>
+        </body>
+    </html>
+    """
+    return html_content
 
 @app.get("/{catchall:path}")
 def read_index(catchall: str):
