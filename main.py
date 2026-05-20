@@ -5,8 +5,8 @@ import models
 from database import engine, get_db
 from routers import booth, users, songs, library, kiosk, mr  # kiosk 포함
 from fastapi.staticfiles import StaticFiles
-
-# 🔥🔥🔥 추가 (ai_module 경로 문제 해결)
+from fastapi.responses import FileResponse 
+from fastapi.routing import APIRoute
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), "ai_module"))
@@ -20,11 +20,6 @@ models.Base.metadata.create_all(bind=engine)
 # FastAPI 앱 생성
 # ===============================
 app = FastAPI(title="SingPick Server")
-
-# ===============================
-# Kiosk 관련: 정적 파일 서비스
-# ===============================
-app.mount("/kiosk_static", StaticFiles(directory="kiosk"), name="kiosk_static")
 
 # ===============================
 # CORS 설정
@@ -52,6 +47,18 @@ app.include_router(mr.router, prefix="/library")
 # ===============================
 app.mount("/mr_files", StaticFiles(directory="downloaded_mrs"), name="mr_files")
 
+
+# ===============================
+# 프론트엔드 React(Vite) 빌드본 정적 에셋 연동
+# ===============================
+# 실제 빌드 경로인 kiosk/src1/dist/assets를 연결
+DIST_DIR = "kiosk/src1/dist"
+ASSETS_DIR = os.path.join(DIST_DIR, "assets")
+
+if os.path.exists(ASSETS_DIR):
+    app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
+
+
 # ===============================
 # 임시 노래 데이터 초기화 (10곡)
 # ===============================
@@ -78,9 +85,36 @@ def on_startup():
     db = next(get_db())
     init_dummy_songs(db)
 
+
 # ===============================
-# 루트 경로
+# 프론트엔드 SPA 라우팅 및 겹침 방지 설정
 # ===============================
-@app.get("/")
-def read_root():
-    return {"message": "SingPick Server is Running!"}
+
+# 기존에 등록된 모든 API 및 시스템 경로 목록을 자동으로 추출하여 가로채기를 방어
+API_ROUTES = set()
+for route in app.routes:
+    if isinstance(route, APIRoute):
+        # /users/login -> 첫 번째 단어인 'users'를 추출
+        root_path = route.path.strip("/").split("/")[0]
+        if root_path:
+            API_ROUTES.add(root_path)
+
+# 추가로 방어해야 할 정적 파일 경로 및 문서 주소 수동 등록
+API_ROUTES.update(["docs", "redoc", "openapi.json", "mr_files", "assets"])
+
+@app.get("/{catchall:path}")
+def read_index(catchall: str):
+    # 1. 요청 경로가 백엔드 API 경로로 시작하면, 가로채지 않고 원래 API 라우터로 넘김
+    first_segment = catchall.strip("/").split("/")[0]
+    if first_segment in API_ROUTES:
+        # 이 조건문이 참이 되면 아래의 파일 리턴을 무시하고, FastAPI 내부에서 알아서 원래 API 주소로 매칭
+        from fastapi.exceptions import HTTPException
+        raise HTTPException(status_code=404, detail="API Not Found")
+    
+    # 2. API 경로가 아니고 일반 화면 이동 요청인 경우 React의 index.html을 뿌려줌
+    index_path = os.path.join(DIST_DIR, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    
+    # 3. 만약 빌드 파일이 없는 경우 임시 안내 메시지 출력
+    return {"message": "SingPick 서버가 구동 중이나 프론트엔드 빌드 파일(dist)을 찾을 수 없습니다."}
