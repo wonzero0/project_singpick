@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import models
 from database import engine, get_db
-from routers import booth, users, songs, library, kiosk, mr  # kiosk 포함
+from routers import booth, users, songs, library, kiosk, mr 
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse 
 from fastapi.routing import APIRoute
@@ -11,6 +11,7 @@ import sys
 import os
 from fastapi.responses import HTMLResponse
 sys.path.append(os.path.join(os.path.dirname(__file__), "ai_module"))
+from Lighting.inside.led_controller import start_led as start_led_arduino, stop_led as stop_led_arduino
 
 # ===============================
 # DB 테이블 생성
@@ -47,6 +48,17 @@ app.include_router(mr.router, prefix="/library")
 # 정적 MR 파일 서비스
 # ===============================
 app.mount("/mr_files", StaticFiles(directory="downloaded_mrs"), name="mr_files")
+
+
+@app.post("/led/play")
+def play_led():
+    start_led_arduino()
+    return {"status":"success"}
+
+@app.post("/led/stop")
+def stop_led_endpoint():
+    stop_led_arduino()
+    return {"status":"success"}
 
 
 # ===============================
@@ -156,3 +168,5 @@ def read_index(catchall: str):
     
     # 3. 만약 빌드 파일이 없는 경우 임시 안내 메시지 출력
     return {"message": "SingPick 서버가 구동 중이나 프론트엔드 빌드 파일(dist)을 찾을 수 없습니다."}
+
+

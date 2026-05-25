@@ -55,16 +55,114 @@ export function Session() {
     { time: number; text: string }[]
   > = {
     "0+0": [
-      { time: 0, text: "검은 눈동자의 사각지대를 찾으러 가자" },
-      { time: 5, text: "여름 코코아 겨울 수박도" },
-      { time: 10, text: "혼나지 않는 파라다이스" },
+  { time: 0, text: "..." },
+  { time: 15.5, text: "검은 눈동자의 사각지대를 찾으러 가자" },
+  { time: 28.5, text: "여름 코코아, 겨울 수박도" },
+  { time: 35.5, text: "혼나지 않는 파라다이스" },
+  { time: 44.5, text: "앞서가는 너의 머리가" },
+  { time: 51.0, text: "두 볼을 간지럽힐 때" },
+  { time: 54.0, text: "나의 내일이 뛰어오네" },
+  { time: 58.5, text: "난 널 버리지 않아" },
+  { time: 65.0, text: "너도 같은 생각이지?" },
+  { time: 72.5, text: "저 너머의 우리는" },
+  { time: 78.0, text: "결코 우리가 될 수 없단다" },
+  { time: 87.0, text: "영생과 영면의 차이를 너는 알고 있니?" },
+  { time: 99.0, text: "멍든 발목을 꺾으려 해도" },
+  { time: 105.5, text: "망설임 없이 태어나는 꿈" },
+  { time: 119.0, text: "난 널 버리지 않아" },
+  { time: 125.0, text: "너도 같은 생각이지?" },
+  { time: 132.5, text: "저 너머의 우리는" },
+  { time: 138.0, text: "결코 우리가 될 수 없단다" },
+  { time: 145.0, text: "아, 난 널 버리지 않아" },
+  { time: 153.0, text: "너도 같은 생각이지?" },
+  { time: 160.5, text: "난 우리를 영영 잃지 않아" },
+  { time: 167.0, text: "너도 영영 그럴 거지?" }
     ],
 
     "한숨": [
-      { time: 0, text: "앞서가는 너의 머리가" },
-      { time: 5, text: "두 볼을 간지럽힐 때" },
-      { time: 10, text: "나의 내일이 뛰어오네" },
+  { time: 0.0, text: "..." },
+  { time: 18.3, text: "숨을 크게 쉬어봐요" },
+  { time: 22.0, text: "당신의 가슴 양쪽이 저리게" },
+  { time: 28.0, text: "조금은 아파올 때까지" },
+  { time: 34.0, text: "숨을 더 뱉어봐요" },
+  { time: 37.4, text: "당신의 안에 남은 게 없다고" },
+  { time: 42.5, text: "느껴질 때까지" },
+  { time: 47.7, text: "숨이 벅차올라도 괜찮아요" },
+  { time: 55.2, text: "아무도 그댈 탓하진 않아" },
+  { time: 63.0, text: "가끔은 실수해도 돼 누구든 그랬으니까" },
+  { time: 71.0, text: "괜찮다는 말 말뿐인 위로지만" },
+  { time: 82.3, text: "누군가의 한숨 그 무거운 숨을" },
+  { time: 89.8, text: "내가 어떻게 헤아릴 수가 있을까요" },
+  { time: 98.0, text: "당신의 한숨 그 깊일 이해할 순 없겠지만" },
+  { time: 105.5, text: "괜찮아요 내가 안아줄게요" },
+  { time: 125.0, text: "숨이 벅차올라도 괜찮아요" },
+  { time: 132.5, text: "아무도 그댈 탓하진 않아" },
+  { time: 140.5, text: "가끔은 실수해도 돼 누구든 그랬으니까" },
+  { time: 148.5, text: "괜찮다는 말 말뿐인 위로지만" },
+  { time: 155.7, text: "누군가의 한숨 그 무거운 숨을" },
+  { time: 163.7, text: "내가 어떻게 헤아릴 수가 있을까요" },
+  { time: 171.5, text: "당신의 한숨 그 깊일 이해할 순 없겠지만" },
+  { time: 179.0, text: "괜찮아요 내가 안아줄게요" },
+  { time: 185.7, text: "남들 눈엔 힘 빠지는" },
+  { time: 189.8, text: "한숨으로 보일진 몰라도 나는 알고 있죠" },
+  { time: 197.3, text: "작은 한숨 내뱉기도 어려운 하루를 보냈다는 걸" },
+  { time: 204.6, text: "이제 다른 생각은 마요" },
+  { time: 210.4, text: "깊이 숨을 쉬어봐요" },
+  { time: 214.2, text: "그대로 내뱉어요" },
+  { time: 221.7, text: "누군가의 한숨 그 무거운 숨을" },
+  { time: 229.9, text: "내가 어떻게 헤아릴 수가 있을까요" },
+  { time: 237.3, text: "당신의 한숨 그 깊일 이해할 순 없겠지만" },
+  { time: 244.9, text: "괜찮아요 내가 안아줄게요" },
+  { time: 254.0, text: "정말 수고했어요" }
     ],
+
+    "사랑의 배터리": [     
+  { time: 0, text: "..." },
+  { time: 17.5, text: "나를 사랑으로 채워줘요" },
+  { time: 21.0, text: "사랑의 배터리가 다 됐나 봐요" },
+  { time: 24.6, text: "당신 없인 못살아 정말 나는 못살아" },
+  { time: 29.0, text: "당신은 나의 배터리" },
+  { time: 32.6, text: "얼짱이 아니라도 좋아요" },
+  { time: 36.5, text: "몸짱이 아니라도 좋아요" },
+  { time: 40.0, text: "나만을 위해줄 당신이 바로 내겐 짱이랍니다" },
+  { time: 47.2, text: "한번 더 나를 안아주세요" },
+  { time: 51.2, text: "가슴이 터지도록 안아주세요" },
+  { time: 55.6, text: "사랑의 약발이 떨어졌나봐 당신이 필요해요" },
+  { time: 61.7, text: "나를 사랑으로 채워줘요" },
+  { time: 65.3, text: "사랑의 배터리가 다 됐나 봐요" },
+  { time: 68.8, text: "당신 없인 못살아 정말 나는 못살아" },
+  { time: 73.0, text: "당신은 나의 배터리" },
+  { time: 76.0, text: "내겐 당신만이 전부예요" },
+  { time: 79.6, text: "당신이 너무 좋아 완전 좋아요" },
+  { time: 84.2, text: "하나뿐인 내 사랑 둘도 없는 내 사랑" },
+
+  { time: 87.8, text: "당신이 짱이랍니다" },
+
+  { time: 89.2, text: "사랑을 가득 넣어 주세요" },
+  { time: 93.3, text: "가슴에 넘치도록 넣어주세요" },
+  { time: 96.0, text: "사랑의 약발이 떨어졌나봐 나 지금 외로워요" },
+
+  { time: 99.7, text: "나를 사랑으로 채워줘요" },
+  { time: 103.3, text: "사랑의 배터리가 다 됐나 봐요" },
+  { time: 106.1, text: "당신 없인 못살아 정말 나는 못살아" },
+  { time: 109.9, text: "당신은 나의 배터리" },
+
+  { time: 112.1, text: "내겐 당신만이 전부예요" },
+  { time: 115.9, text: "당신이 너무 좋아 완전 좋아요" },
+  { time: 118.6, text: "하나뿐인 내 사랑 둘도 없는 내 사랑" },
+  { time: 120.8, text: "당신이 짱이랍니다" },
+
+  { time: 123.1, text: "아무리 힘든 날에도 당신만 있다면" },
+  { time: 126.0, text: "힘들지 않아 나는 슬프지 않아 당신 곁이라면" },
+
+  { time: 130.2, text: "내겐 당신만이 전부예요" },
+  { time: 132.9, text: "당신이 너무 좋아 완전 좋아요" },
+  { time: 136.4, text: "하나뿐인 내 사랑 둘도 없는 내 사랑" },
+  { time: 139.8, text: "당신이 짱이랍니다" },
+
+  { time: 142.0, text: "당신이 짱이랍니다" },
+  { time: 145.0, text: "당신이 짱이랍니다" }
+    ]
   };
 
   // =========================
@@ -86,7 +184,7 @@ export function Session() {
         setShowFeedbackButton(false);
 
         const res = await fetch(
-          `http://127.0.0.1:8000/library/download_mr?song_info=${encodeURIComponent(
+          `/library/download_mr?song_info=${encodeURIComponent(
             `${currentSong.title} | ${currentSong.artist}`
           )}`
         );
@@ -151,26 +249,75 @@ export function Session() {
     return () => clearTimeout(timer);
   }, [stage, countdown]);
 
-  // =========================
-  // 🎵 오디오 재생
-  // =========================
-  useEffect(() => {
-    if (stage !== "playing") return;
+// =========================
+// 🎉 LED 제어
+// =========================
+useEffect(() => {
 
-    audioRef.current?.play();
+  // 🎵 MR 로딩 완료 → 미러볼 시작
+  if (stage === "countdown") {
 
-    // 🔥 핵심: MR 끝났을 때 버튼 생성
-    audioRef.current!.onended = () => {
-      const isLastSong =
-        currentIndex === reservedSongs.length - 1;
+    fetch("/led/play", {
+      method: "POST",
+    });
+  }
 
-      if (isLastSong) {
-        setShowFeedbackButton(true);
-      } else {
-        setShowNextButton(true);
-      }
-    };
-  }, [stage]);
+  // ⏹ 종료 → 흰 LED 복귀
+  if (
+    stage === "complete" ||
+    stage === "error"
+  ) {
+
+    fetch("/led/stop", {
+      method: "POST",
+    });
+  }
+
+}, [stage]);
+
+// =========================
+// 🎵 오디오 재생
+// =========================
+useEffect(() => {
+  if (stage !== "playing" || !audioRef.current || !audioUrl) return;
+
+  const audioElement = audioRef.current;
+
+  const handleAudioEnd = async () => {
+    console.log(`🎵 곡 종료 - currentIndex: ${currentIndex}, 전체: ${reservedSongs.length}`);
+    
+    try {
+      await fetch("/led/stop", {
+        method: "POST",
+      });
+    } catch (error) {
+      console.error("LED stop request failed", error);
+    }
+
+    // 현재 곡이 마지막인지 확인
+    if (currentIndex >= reservedSongs.length - 1) {
+      console.log("✅ 마지막 곡 완료 → Feedback 페이지로 이동");
+      setTimeout(() => {
+        navigate("/feedback");
+      }, 500);
+    } else {
+      console.log("➡️ 다음 곡 대기");
+      setShowNextButton(true);
+    }
+  };
+
+  // 이전 리스너 제거 후 새로 등록
+  audioElement.removeEventListener("ended", handleAudioEnd);
+  audioElement.addEventListener("ended", handleAudioEnd, { once: true });
+  
+  audioElement.play().catch((error) => {
+    console.error("Audio play failed", error);
+  });
+
+  return () => {
+    audioElement.removeEventListener("ended", handleAudioEnd);
+  };
+}, [stage, currentIndex, reservedSongs.length, audioUrl, navigate]);
 
   // =========================
   // 🎤 가사 싱크
@@ -233,7 +380,7 @@ export function Session() {
           <div className="w-20 h-20 border-4 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />
 
           <div className="text-3xl font-bold text-cyan-300">
-            엠알 불러오는 중...
+            MR 불러오는 중…
           </div>
 
           <div className="text-xl text-slate-400">

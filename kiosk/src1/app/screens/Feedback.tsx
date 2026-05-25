@@ -14,7 +14,7 @@ export function Feedback() {
 
     async function loadUserInfo() {
       try {
-        const res = await fetch("http://127.0.0.1:8000/kiosk/current_user", {
+        const res = await fetch("/kiosk/current_user", {
           cache: "no-store",
         });
 
@@ -46,13 +46,18 @@ export function Feedback() {
 
   const handleGoHome = async () => {
   try {
-    // 1. 백엔드 상태 초기화 신호 보내기
-    const response = await fetch("http://127.0.0.1:8000/kiosk/reset", {
+    // 1. 내부 LED를 먼저 흰색으로 복귀
+    await fetch("/led/stop", {
+      method: "POST",
+    });
+
+    // 2. 백엔드 상태 초기화 신호 보내기
+    const response = await fetch("/kiosk/reset", {
       method: "POST",
     });
 
     if (response.ok) {
-      // 2. 백엔드 리셋 성공 시 리액트 화면을 처음(메인)으로 이동
+      // 3. 백엔드 리셋 성공 시 리액트 화면을 처음(메인)으로 이동
       navigate("/"); 
     }
   } catch (error) {

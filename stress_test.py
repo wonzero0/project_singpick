@@ -3,7 +3,7 @@ import threading
 import time
 
 # 목표: 100명이 동시에 "아이유"를 검색하는 상황 시뮬레이션
-URL = "http://127.0.0.1:8000/library/search"
+URL = "http://192.168.0.189:8000/library/search"
 PARAMS = {"keyword": "아이유"}
 
 # 성공/실패 횟수 카운트

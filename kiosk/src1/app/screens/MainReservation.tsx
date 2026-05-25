@@ -28,7 +28,7 @@ export function MainReservation() {
 
     async function loadUserInfo() {
       try {
-        const res = await fetch("http://127.0.0.1:8000/kiosk/current_user", {
+        const res = await fetch("http://192.168.0.189:8000/kiosk/current_user", {
           cache: "no-store",
         });
         const data = await res.json();
@@ -92,8 +92,8 @@ export function MainReservation() {
 
         const keyword = searchQuery.trim();
         const url = keyword
-          ? `http://127.0.0.1:8000/library/search?keyword=${encodeURIComponent(keyword)}`
-          : "http://127.0.0.1:8000/library/search";
+          ? `http://192.168.0.189:8000/library/search?keyword=${encodeURIComponent(keyword)}`
+          : "http://192.168.0.189:8000/library/search";
 
         const res = await fetch(url, {
           cache: "no-store",

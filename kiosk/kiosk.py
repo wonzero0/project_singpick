@@ -279,7 +279,7 @@ class SignUpPage(QWidget):
         if not (user_id.isalnum() and 4 <= len(user_id) <= 20):
             self.error_label.setText("오류: 아이디 양식 틀림")
             return
-        if len(콜) != 11 or not phone.isdigit():
+        if len(phone) != 11 or not phone.isdigit():
             self.error_label.setText("오류: 전화번호 양식 틀림")
             return
         if len(password) != 6 or not password.isdigit():
@@ -288,7 +288,7 @@ class SignUpPage(QWidget):
 
         payload = {"user_id": user_id, "phone": phone, "password": password}
         try:
-            res = requests.post("http://127.0.0.1:8000/users/signup", json=payload)
+            res = requests.post("http://192.168.0.189:8000/users/signup", json=payload)
             if res.status_code == 200:
                 print("✅ 회원가입 성공!")
                 self.reset()
@@ -408,7 +408,7 @@ class LoginPage(QWidget):
         payload = {"phone": phone, "password": password}
 
         try:
-            url = "http://127.0.0.1:8000/users/login"
+            url = "http://192.168.0.189:8000/users/login"
             response = requests.post(url, json=payload)
 
             if response.status_code == 200:
@@ -570,7 +570,7 @@ class KioskApp(QWidget):
     def send_led_command(self, color: str):
         try:
             requests.post(
-                "http://127.0.0.1:8000/kiosk/led",
+                "http://192.168.0.189:8000/kiosk/led",
                 json={"color": color},
                 timeout=1,
             )
@@ -614,7 +614,7 @@ class KioskApp(QWidget):
             }
 
             try:
-                response = requests.post("http://127.0.0.1:8000/kiosk/entry", json=payload)
+                response = requests.post("http://192.168.0.189:8000/kiosk/entry", json=payload)
 
                 if response.status_code == 200:
                     print("✅ 부스 입장 처리 성공!")
