@@ -3,6 +3,25 @@ import path from 'path';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
+const backendTarget =
+  process.env.VITE_BACKEND_ORIGIN || 'http://localhost:8000';
+
+const apiProxy: Record<string, { target: string; changeOrigin: boolean }> = [
+  '/library',
+  '/kiosk',
+  '/led',
+  '/users',
+  '/songs',
+  '/booth',
+  '/mr_files',
+].reduce((proxy, route) => {
+  proxy[route] = {
+    target: backendTarget,
+    changeOrigin: true,
+  };
+  return proxy;
+}, {} as Record<string, { target: string; changeOrigin: boolean }>);
+
 /**
  * 피그마 에셋을 src/assets 경로에서 찾아주는 커스텀 플러그인
  */
@@ -36,6 +55,7 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    proxy: apiProxy,
   },
   
   assetsInclude: [

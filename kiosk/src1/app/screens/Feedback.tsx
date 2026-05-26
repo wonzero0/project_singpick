@@ -5,11 +5,30 @@ import { useEffect, useState } from "react";
 
 export function Feedback() {
   const navigate = useNavigate();
-
   const [userId, setUserId] = useState("-");
   const [showExitModal, setShowExitModal] = useState(false);
 
-  const origin = window.location.origin;
+  // 1. 서버 IP를 직접 적지 말고, 환경 변수(.env)에서 가져오거나 
+  //    접속한 브라우저의 호스트를 활용하는 방식을 권장합니다.
+  //    (라즈베리 파이로 옮길 땐 .env 파일의 IP만 수정하면 됩니다.)
+  const currentUrl = new URL(window.location.href);
+  const configuredOrigin = import.meta.env.VITE_PUBLIC_ORIGIN;
+  const configuredServerIp = import.meta.env.VITE_SERVER_IP;
+  const isLocalHost =
+    currentUrl.hostname === "localhost" ||
+    currentUrl.hostname === "127.0.0.1";
+
+  const mobileOrigin =
+    configuredOrigin ||
+    (isLocalHost && configuredServerIp
+      ? `${currentUrl.protocol}//${configuredServerIp}:${currentUrl.port}`
+      : window.location.origin);
+  
+  // 2. QR 코드가 접속할 실제 주소 
+  const feedbackUrl = new URL("/web", mobileOrigin).toString();
+  
+  // 3. QR 이미지 생성 (주소 데이터를 인코딩하여 전달)
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(feedbackUrl)}`;
 
   // ... useEffect 및 handle 함수들은 기존과 동일하게 유지 ...
   useEffect(() => {
@@ -80,7 +99,7 @@ export function Feedback() {
             </div>
             <div className="bg-gradient-to-br from-slate-500/10 to-slate-600/10 border border-slate-400/30 rounded-2xl p-8 flex flex-col items-center">
               <div className="w-48 h-48 bg-white rounded-2xl flex items-center justify-center mb-4 p-4 shadow-inner">
-                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${origin}/web`} alt="QR" className="w-full h-full object-contain rounded-lg" />
+                <img src={qrCodeUrl} alt="QR" className="w-full h-full object-contain rounded-lg" />
               </div>
               <p className="text-lg text-center text-slate-400">
                 {userId !== "비회원" && userId !== "-" ? <>QR 코드를 스캔하여 <span className="text-cyan-300 font-bold"> "{userId}" </span> 님의 누적 피드백을 확인하세요.</> : <>QR 코드를 스캔하여 상세 피드백을 확인하세요.</>}

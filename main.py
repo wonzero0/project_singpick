@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import models
@@ -10,6 +10,7 @@ from fastapi.routing import APIRoute
 import sys
 import os
 from fastapi.responses import HTMLResponse
+from urllib.parse import quote
 sys.path.append(os.path.join(os.path.dirname(__file__), "ai_module"))
 from Lighting.inside.led_controller import start_led as start_led_arduino, stop_led as stop_led_arduino
 
@@ -120,11 +121,11 @@ for route in app.routes:
 API_ROUTES.update(["docs", "redoc", "openapi.json", "mr_files", "assets"])
 
 @app.get("/qr", response_class=HTMLResponse)
-def show_qr_page():
+def show_qr_page(request: Request):
     # (컴퓨터 터미널에 ipconfig를 치면 나오는 IPv4 주소입니다.)
-    my_computer_ip = "192.168.0.189"  # 본인 IP로 수정 필수
     
-    target_url = f"http://{my_computer_ip}:8000/"
+    target_url = str(request.url_for("read_index", catchall="web"))
+    qr_data = quote(target_url, safe="")
     
     # 오픈소스 QR 코드 API를 이용해 화면에 QR을 이쁘게 띄워주는 HTML
     html_content = f"""
@@ -144,7 +145,7 @@ def show_qr_page():
             <div class="card">
                 <h1>🎤 SingPick 모바일 연결 큐알</h1>
                 <p>스마트폰 카메라로 아래 QR 코드를 스캔하세요!<br>(주의: 컴퓨터와 휴대폰이 같은 와이파이에 연결되어 있어야 합니다)</p>
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={target_url}" alt="QR Code">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={qr_data}" alt="QR Code">
                 <div class="url-box">{target_url}</div>
             </div>
         </body>

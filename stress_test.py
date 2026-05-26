@@ -1,9 +1,11 @@
 import requests
 import threading
 import time
+import os
 
 # 목표: 100명이 동시에 "아이유"를 검색하는 상황 시뮬레이션
-URL = "http://192.168.0.189:8000/library/search"
+BASE_URL = os.environ.get("SINGPICK_API_BASE_URL", "http://localhost:8000").rstrip("/")
+URL = f"{BASE_URL}/library/search"
 PARAMS = {"keyword": "아이유"}
 
 # 성공/실패 횟수 카운트

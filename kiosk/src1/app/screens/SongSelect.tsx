@@ -39,8 +39,6 @@ export default function SongSelect() {
         }
       );
 
-      alert("곡 선택 완료");
-
       navigate("/reservation");
 
     } catch (e) {
