@@ -82,38 +82,72 @@ export default function Web() {
     }
 
     setLoading(true);
+
     const formData = new FormData();
+
     formData.append("file", selectedFile);
     formData.append("reservation_id", "1");
-    // 실시간 연동된 진짜 유저 ID를 백엔드로 쏴줍니다!
-    formData.append("user_id", userId); 
+    formData.append("reference_song", "No_Doubt");
+    formData.append("user_bpm", "120");
 
     try {
-      const response = await fetch("http://192.168.0.189:8000/songs/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetch(
+        "http://192.168.0.189:8000/songs/upload",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       const result = await response.json();
 
       if (result.status === "success") {
         const data = result.data;
-        setFeedback(data.feedback || "AI 분석이 완료되었습니다.");
 
-        const pitch = Math.round((data.pitch_score || 0) * (data.pitch_score <= 1 ? 100 : 1));
-        const tempo = Math.round((data.tempo_score || 0) * (data.tempo_score <= 1 ? 100 : 1));
-        const volume = Math.round((data.volume_score || 0) * (data.volume_score <= 1 ? 100 : 1));
+        setFeedback(
+          data.feedback ||
+            "AI 분석이 완료되었습니다."
+        );
+
+        const pitch = Math.round(
+          (data.pitch_score || 0) *
+            (data.pitch_score <= 1 ? 100 : 1)
+        );
+
+        const tempo = Math.round(
+          (data.tempo_score || 0) *
+            (data.tempo_score <= 1 ? 100 : 1)
+        );
+
+        const volume = Math.round(
+          (data.volume_score || 0) *
+            (data.volume_score <= 1 ? 100 : 1)
+        );
 
         setVoiceStats([
-          { label: "음정", value: pitch, color: "#66BB6A" },
-          { label: "박자", value: tempo, color: "#4CAF50" },
-          { label: "성량", value: volume, color: "#2F7C31" },
+          {
+            label: "음정",
+            value: pitch,
+            color: "#66BB6A",
+          },
+          {
+            label: "박자",
+            value: tempo,
+            color: "#4CAF50",
+          },
+          {
+            label: "성량",
+            value: volume,
+            color: "#2F7C31",
+          },
         ]);
 
         setRecommendedSongs([
           {
-            title: data.top_song || "추천 결과 없음",
-            artist: data.top_singer || "분석 완료",
+            title:
+              data.top_song || "추천 결과 없음",
+            artist:
+              data.top_singer || "분석 완료",
             match: pitch,
           },
         ]);

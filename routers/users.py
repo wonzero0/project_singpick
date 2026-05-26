@@ -4,6 +4,10 @@ from pydantic import BaseModel, Field, field_validator
 from database import get_db
 import models
 from utils import aes_encrypt
+<<<<<<< HEAD
+=======
+from routers.kiosk import current_kiosk_state
+>>>>>>> c2cad4ea83dcd3f872b404eb13331b519bda3596
 import bcrypt
 from datetime import datetime, timedelta
 
@@ -125,7 +129,19 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)):
         if phone in login_attempts:
             del login_attempts[phone]
 
+<<<<<<< HEAD
         return {"status": "success", "message": f"안녕하세요, {db_user.user_id}님!", "user_id": db_user.user_id}
+=======
+        # 🔥 현재 키오스크 사용자 상태 저장
+        current_kiosk_state["status"] = "member"
+        current_kiosk_state["user_id"] = db_user.user_id
+        
+        return {
+            "status": "success",
+            "message": f"안녕하세요, {db_user.user_id}님!",
+            "user_id": db_user.user_id
+        }
+>>>>>>> c2cad4ea83dcd3f872b404eb13331b519bda3596
         
     except HTTPException as he:
         raise he

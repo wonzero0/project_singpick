@@ -32,7 +32,11 @@ class AESCipher:
 
     def encrypt(self, raw_text):
         if not raw_text: return None
+<<<<<<< HEAD
         iv = os.urandom(16)  # 매번 새로운 IV 생성 
+=======
+        iv = os.urandom(16)  # 매번 새로운 IV 생성 (보안 핵심!)
+>>>>>>> c2cad4ea83dcd3f872b404eb13331b519bda3596
         cipher = AES.new(self.key, AES.MODE_CBC, iv)
         ct_bytes = cipher.encrypt(pad(raw_text.encode('utf-8'), AES.block_size))
         return base64.b64encode(iv + ct_bytes).decode('utf-8')

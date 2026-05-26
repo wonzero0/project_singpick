@@ -1,4 +1,4 @@
-import sys 
+import sys
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QPushButton,
     QVBoxLayout, QHBoxLayout, QLineEdit,

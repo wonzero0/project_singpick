@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { Search, Music2, Play } from "lucide-react";
 import { ConfirmationModal } from "../components/예약확인";
 
@@ -28,9 +28,8 @@ export function MainReservation() {
 
     async function loadUserInfo() {
       try {
-        const res = await fetch("http://192.168.0.189:8000/kiosk/current_user", {
-          cache: "no-store",
-        });
+        // 상대 경로로 변경하여 서버 배포 환경에 최적화
+        const res = await fetch("/kiosk/current_user", { cache: "no-store" });
         const data = await res.json();
 
         if (!isMounted) return;
@@ -49,18 +48,9 @@ export function MainReservation() {
         }
 
         const prevUserKey =
-          lastStatus === "member"
-            ? userId
-            : lastStatus === "guest"
-            ? "비회원"
-            : "-";
-
+          lastStatus === "member" ? userId : lastStatus === "guest" ? "비회원" : "-";
         const nextUserKey =
-          newStatus === "member"
-            ? data.user_id ?? "-"
-            : newStatus === "guest"
-            ? "비회원"
-            : "-";
+          newStatus === "member" ? data.user_id ?? "-" : newStatus === "guest" ? "비회원" : "-";
 
         if (prevUserKey !== nextUserKey || newStatus === "none") {
           setReservedSongs([]);
@@ -92,19 +82,14 @@ export function MainReservation() {
 
         const keyword = searchQuery.trim();
         const url = keyword
-          ? `http://192.168.0.189:8000/library/search?keyword=${encodeURIComponent(keyword)}`
-          : "http://192.168.0.189:8000/library/search";
+          ? `/library/search?keyword=${encodeURIComponent(keyword)}`
+          : "/library/search";
 
-        const res = await fetch(url, {
-          cache: "no-store",
-        });
+        const res = await fetch(url, { cache: "no-store" });
 
-        if (!res.ok) {
-          throw new Error("곡 목록 요청 실패");
-        }
+        if (!res.ok) throw new Error("곡 목록 요청 실패");
 
         const data = await res.json();
-
         if (cancelled) return;
 
         const mappedSongs: Song[] = (data.results ?? []).map((song: any) => ({
@@ -122,29 +107,22 @@ export function MainReservation() {
           setSongsError("곡 목록을 불러오지 못했습니다.");
         }
       } finally {
-        if (!cancelled) {
-          setSongsLoading(false);
-        }
+        if (!cancelled) setSongsLoading(false);
       }
     }
 
     loadSongs();
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [searchQuery]);
 
   const isReserved = (songId: number) => reservedSongs.some((s) => s.id === songId);
 
   const handleReserve = (song: Song) => {
     if (isReserved(song.id)) return;
-
     if (reservedSongs.length >= remainingSongs) {
       alert("예약 가능한 곡 수를 모두 사용했습니다.");
       return;
     }
-
     setReservedSongs((prev) => [...prev, song]);
   };
 
@@ -152,8 +130,7 @@ export function MainReservation() {
     setReservedSongs((prev) => prev.filter((s) => s.id !== songId));
   };
 
-  const isStartEnabled =
-    remainingSongs > 0 && reservedSongs.length === remainingSongs;
+  const isStartEnabled = remainingSongs > 0 && reservedSongs.length === remainingSongs;
 
   const handleStart = () => {
     if (!isStartEnabled) return;
@@ -162,38 +139,29 @@ export function MainReservation() {
 
   const handleConfirm = () => {
     navigate("/session", {
-      state: {
-        reservedSongs,
-        userId,
-        remainingSongs,
-      },
+      state: { reservedSongs, userId, remainingSongs },
     });
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-neutral-950 text-white flex flex-col">
+    <div className="h-screen w-full overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-neutral-950 text-white flex flex-col">
+      {/* Top Bar */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-black/60 backdrop-blur-xl border-b border-white/10">
         <div className="px-8 py-6 flex items-center justify-between">
-          <div className="text-lg font-medium text-cyan-300">
-            ID: {userId}
-          </div>
-
+          <div className="text-lg font-medium text-cyan-300">ID: {userId}</div>
           <div className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
             Sing Pick
           </div>
-
           <div className="text-lg font-medium text-cyan-300">
             {reservedSongs.length} / {remainingSongs}
           </div>
         </div>
       </div>
 
+      {/* Search Bar */}
       <div className="fixed top-[88px] left-0 right-0 z-40 bg-gradient-to-b from-slate-950/90 to-transparent backdrop-blur-sm px-8 py-6">
         <div className="relative max-w-4xl mx-auto">
-          <Search
-            className="absolute left-6 top-1/2 -translate-y-1/2 text-cyan-400"
-            size={24}
-          />
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-cyan-400" size={24} />
           <input
             type="text"
             placeholder="노래 제목 또는 아티스트 검색..."
@@ -204,92 +172,43 @@ export function MainReservation() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-8 pt-[200px] pb-[120px]">
+      {/* Song List */}
+      <div className="flex-1 overflow-y-auto overscroll-contain px-8 pt-[200px] pb-[220px]" style={{ WebkitOverflowScrolling: "touch" }}>
         <div className="max-w-4xl mx-auto space-y-3">
-          {songsLoading && (
-            <div className="text-center text-slate-300 py-10">
-              곡 목록을 불러오는 중입니다...
-            </div>
-          )}
-
-          {!songsLoading && songsError && (
-            <div className="text-center text-red-400 py-10">
-              {songsError}
-            </div>
-          )}
-
-          {!songsLoading && !songsError && songs.length === 0 && (
-            <div className="text-center text-slate-400 py-10">
-              검색 결과가 없습니다.
-            </div>
-          )}
-
-          {!songsLoading &&
-            !songsError &&
-            songs.map((song) => (
-              <div
-                key={song.id}
-                className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 flex items-center justify-between hover:bg-white/10 transition-all group"
-              >
-                <div className="flex items-center gap-4 flex-1">
-                  <div className="w-14 h-14 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center">
-                    <Music2 size={28} />
-                  </div>
-
-                  <div className="flex-1">
-                    <div className="text-xl font-medium mb-1">{song.title}</div>
-                    <div className="text-slate-400">{song.artist}</div>
-                  </div>
+          {songsLoading && <div className="text-center text-slate-300 py-10">곡 목록을 불러오는 중입니다...</div>}
+          {!songsLoading && songsError && <div className="text-center text-red-400 py-10">{songsError}</div>}
+          {!songsLoading && !songsError && songs.length === 0 && <div className="text-center text-slate-400 py-10">검색 결과가 없습니다.</div>}
+          
+          {!songsLoading && !songsError && songs.map((song) => (
+            <div key={song.id} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 flex items-center justify-between hover:bg-white/10 transition-all group">
+              <div className="flex items-center gap-4 flex-1">
+                <div className="w-14 h-14 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center">
+                  <Music2 size={28} />
                 </div>
-
-                {isReserved(song.id) ? (
-                  <button
-                    onClick={() => handleRemove(song.id)}
-                    className="px-8 py-3 bg-red-500/20 border-2 border-red-400 text-red-300 rounded-xl font-medium hover:bg-red-500/30 transition-all"
-                  >
-                    취소
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleReserve(song)}
-                    disabled={reservedSongs.length >= remainingSongs}
-                    className={`px-8 py-3 rounded-xl font-medium transition-all ${
-                      reservedSongs.length >= remainingSongs
-                        ? "bg-gray-500/20 border-2 border-gray-500/30 text-gray-400 cursor-not-allowed"
-                        : "bg-cyan-500/20 border-2 border-cyan-400 text-cyan-200 hover:bg-cyan-500/30"
-                    }`}
-                  >
-                    예약
-                  </button>
-                )}
+                <div className="flex-1">
+                  <div className="text-xl font-medium mb-1">{song.title}</div>
+                  <div className="text-slate-400">{song.artist}</div>
+                </div>
               </div>
-            ))}
+              {isReserved(song.id) ? (
+                <button onClick={() => handleRemove(song.id)} className="px-8 py-3 bg-red-500/20 border-2 border-red-400 text-red-300 rounded-xl font-medium hover:bg-red-500/30 transition-all">취소</button>
+              ) : (
+                <button onClick={() => handleReserve(song)} disabled={reservedSongs.length >= remainingSongs} className={`px-8 py-3 rounded-xl font-medium transition-all ${reservedSongs.length >= remainingSongs ? "bg-gray-500/20 border-2 border-gray-500/30 text-gray-400 cursor-not-allowed" : "bg-cyan-500/20 border-2 border-cyan-400 text-cyan-200 hover:bg-cyan-500/30"}`}>예약</button>
+              )}
+            </div>
+          ))}
         </div>
       </div>
 
+      {/* Start Button */}
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-slate-950 to-transparent p-8">
-        <button
-          onClick={handleStart}
-          disabled={!isStartEnabled}
-          className={`w-full max-w-4xl mx-auto block py-7 rounded-3xl text-2xl font-bold transition-all ${
-            isStartEnabled
-              ? "bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 shadow-lg shadow-cyan-500/30"
-              : "bg-gray-600/30 text-gray-400 cursor-not-allowed"
-          }`}
-        >
-          <div className="flex items-center justify-center gap-3">
-            <Play size={28} />
-            시작하기
-          </div>
+        <button onClick={handleStart} disabled={!isStartEnabled} className={`w-full max-w-4xl mx-auto block py-7 rounded-3xl text-2xl font-bold transition-all ${isStartEnabled ? "bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 shadow-lg shadow-cyan-500/30" : "bg-gray-600/30 text-gray-400 cursor-not-allowed"}`}>
+          <div className="flex items-center justify-center gap-3"><Play size={28} /> 시작하기</div>
         </button>
       </div>
 
       {showModal && (
-        <ConfirmationModal
-          reservedSongs={reservedSongs}
-          onConfirm={handleConfirm}
-          onCancel={() => setShowModal(false)}
-        />
+        <ConfirmationModal reservedSongs={reservedSongs} onConfirm={handleConfirm} onCancel={() => setShowModal(false)} />
       )}
     </div>
   );
