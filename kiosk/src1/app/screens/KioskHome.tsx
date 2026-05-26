@@ -1,8 +1,19 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function KioskHome() {
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetch("/kiosk/led", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ color: "GREEN" }),
+    }).catch(() => {
+      console.warn("외부 LED GREEN 명령 전송 실패");
+    });
+  }, []);
 
   return (
     <div

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import NumberKeyboard from "../components/NumberKeyboard";
@@ -17,6 +17,16 @@ export default function Signup() {
   const [activeInput, setActiveInput] = useState<
     "id" | "phone" | "password" | null
   >(null);
+
+  useEffect(() => {
+    fetch("/kiosk/led", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ color: "GREEN" }),
+    }).catch(() => {
+      console.warn("외부 LED GREEN 명령 전송 실패");
+    });
+  }, []);
 
   const signup = async () => {
 

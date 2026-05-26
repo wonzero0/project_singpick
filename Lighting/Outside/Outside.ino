@@ -1,9 +1,9 @@
-// RGB 1번 LED 핀 설정 (예: 내부용)
+// RGB 1번 LED 핀 설정 
 const int redPin1 = 3;
 const int greenPin1 = 5;
 const int bluePin1 = 6;
 
-// RGB 2번 LED 핀 설정 (예: 외부용)
+// RGB 2번 LED 핀 설정
 const int redPin2 = 9;
 const int greenPin2 = 10;
 const int bluePin2 = 11;

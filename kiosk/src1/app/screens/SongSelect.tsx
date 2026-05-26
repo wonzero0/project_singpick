@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function SongSelect() {
@@ -6,6 +6,16 @@ export default function SongSelect() {
   const navigate = useNavigate();
 
   const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    fetch("/kiosk/led", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ color: "RED" }),
+    }).catch(() => {
+      console.warn("외부 LED RED 명령 전송 실패");
+    });
+  }, []);
 
   const finish = async () => {
 

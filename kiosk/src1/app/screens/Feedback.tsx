@@ -9,6 +9,8 @@ export function Feedback() {
   const [userId, setUserId] = useState("-");
   const [showExitModal, setShowExitModal] = useState(false);
 
+  const origin = window.location.origin;
+
   // ... useEffect 및 handle 함수들은 기존과 동일하게 유지 ...
   useEffect(() => {
     let isMounted = true;
@@ -78,7 +80,7 @@ export function Feedback() {
             </div>
             <div className="bg-gradient-to-br from-slate-500/10 to-slate-600/10 border border-slate-400/30 rounded-2xl p-8 flex flex-col items-center">
               <div className="w-48 h-48 bg-white rounded-2xl flex items-center justify-center mb-4 p-4 shadow-inner">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=http://192.168.0.189:8000/web" alt="QR" className="w-full h-full object-contain rounded-lg" />
+                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${origin}/web`} alt="QR" className="w-full h-full object-contain rounded-lg" />
               </div>
               <p className="text-lg text-center text-slate-400">
                 {userId !== "비회원" && userId !== "-" ? <>QR 코드를 스캔하여 <span className="text-cyan-300 font-bold"> "{userId}" </span> 님의 누적 피드백을 확인하세요.</> : <>QR 코드를 스캔하여 상세 피드백을 확인하세요.</>}
