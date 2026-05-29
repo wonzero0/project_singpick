@@ -4,7 +4,7 @@ import time
 import os
 
 # 목표: 100명이 동시에 "아이유"를 검색하는 상황 시뮬레이션
-BASE_URL = os.environ.get("SINGPICK_API_BASE_URL", "http://localhost:8000").rstrip("/")
+BASE_URL = os.environ.get("SINGPICK_API_BASE_URL", "http://192/168/0/236:8000").rstrip("/")
 URL = f"{BASE_URL}/library/search"
 PARAMS = {"keyword": "아이유"}
 

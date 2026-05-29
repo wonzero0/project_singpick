@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
 import models
 from database import engine, get_db
@@ -18,6 +19,32 @@ from Lighting.inside.led_controller import start_led as start_led_arduino, stop_
 # DB 테이블 생성
 # ===============================
 models.Base.metadata.create_all(bind=engine)
+
+
+def ensure_reservation_schema():
+    inspector = inspect(engine)
+    if "reservations" not in inspector.get_table_names():
+        return
+
+    columns = {column["name"] for column in inspector.get_columns("reservations")}
+    with engine.begin() as conn:
+        if "user_id" not in columns:
+            conn.execute(text("ALTER TABLE reservations ADD COLUMN user_id VARCHAR(50) NULL"))
+        else:
+            conn.execute(text("ALTER TABLE reservations MODIFY COLUMN user_id VARCHAR(50) NULL"))
+
+        if "booth_id" not in columns:
+            conn.execute(text("ALTER TABLE reservations ADD COLUMN booth_id INT DEFAULT 1"))
+        else:
+            conn.execute(text("ALTER TABLE reservations MODIFY COLUMN booth_id INT DEFAULT 1"))
+
+        if "song_id" not in columns:
+            conn.execute(text("ALTER TABLE reservations ADD COLUMN song_id INT"))
+        else:
+            conn.execute(text("ALTER TABLE reservations MODIFY COLUMN song_id INT"))
+
+
+ensure_reservation_schema()
 
 # ===============================
 # FastAPI 앱 생성
@@ -207,5 +234,4 @@ def read_index(catchall: str):
     
     # 3. 만약 빌드 파일이 없는 경우 임시 안내 메시지 출력
     return {"message": "SingPick 서버가 구동 중이나 프론트엔드 빌드 파일(dist)을 찾을 수 없습니다."}
-
 

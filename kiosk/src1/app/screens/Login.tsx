@@ -96,7 +96,7 @@ export default function Login() {
           type="tel"
           value={phone}
           readOnly
-          placeholder="전화번호 입력"
+          placeholder="전화번호 입력 (010 포함)"
           onClick={() => setActiveInput("phone")}
           className="
             w-[520px]

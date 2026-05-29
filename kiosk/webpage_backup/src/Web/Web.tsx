@@ -133,11 +133,11 @@ export default function Web() {
 
     formData.append("file", selectedFile);
     formData.append("reservation_id", "1");
-    formData.append(
-      "reference_song",
-      "No_Doubt"
-    );
-    formData.append("user_bpm", "120");
+    // formData.append(
+    //   "reference_song",
+    //   "No_Doubt"
+    // );
+    // formData.append("user_bpm", "120");
 
     try {
       const response = await fetch(

@@ -1,7 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from database import get_db
 import models
+from state import (
+    BOOTH_ID,
+    BOOTH_STATUS_BUSY,
+    current_kiosk_state,
+    get_current_reservation_user_id,
+    set_booth_status,
+)
 
 router = APIRouter(
     prefix="/library",
@@ -32,25 +40,36 @@ def search_song(keyword: str = "", db: Session = Depends(get_db)):
     }
 
 
-@router.post("/reserve", summary="노래 예약", description="부스 번호와 곡 번호(KY 번호)를 받아 예약합니다.")
-def reserve_song(booth_id: int, ky_number: int, db: Session = Depends(get_db)):
+@router.post("/reserve", summary="노래 예약")
+def reserve_song(ky_number: int, db: Session = Depends(get_db)):
     song = db.query(models.Song).filter(models.Song.ky_number == ky_number).first()
-
     if not song:
         raise HTTPException(status_code=404, detail="존재하지 않는 노래 번호입니다.")
 
+    # 현재 키오스크에 입장한 사용자의 ID 또는 비회원 식별자 가져오기
+    current_user = get_current_reservation_user_id()
+
+    if current_kiosk_state["status"] in ("member", "guest"):
+        set_booth_status(db, BOOTH_STATUS_BUSY)
+
     new_reservation = models.Reservation(
-        booth_id=booth_id,
+        user_id=current_user,
+        booth_id=BOOTH_ID,
         song_id=song.song_id,
         status="waiting"
     )
-    db.add(new_reservation)
-    db.commit()
-    db.refresh(new_reservation)
+
+    try:
+        db.add(new_reservation)
+        db.commit()
+        db.refresh(new_reservation)
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="예약 정보를 DB에 저장하지 못했습니다.")
 
     return {
         "status": "success",
-        "message": f"[{song.title}] 예약되었습니다. (방: {booth_id}번)",
+        "message": f"[{song.title}] 예약되었습니다. (방: {BOOTH_ID}번)",
         "reservation_id": new_reservation.id,
         "song_id": song.song_id,
         "title": song.title,

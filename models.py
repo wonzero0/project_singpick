@@ -46,13 +46,14 @@ class Reservation(Base):
     __tablename__ = "reservations"
 
     id = Column(Integer, primary_key=True, index=True)
-    booth_id = Column(Integer)
+    user_id = Column(String(50), nullable=True) # 회원ID 또는 비회원 문자열 저장
+    booth_id = Column(Integer, default=1)      # 1로 고정
     song_id = Column(Integer)
     status = Column(String(20), default="waiting")
 
 
 # =========================
-# 5. AI 분석 결과 (🔥 핵심 수정)
+# 5. AI 분석 결과 (핵심 수정)
 # =========================
 class AnalysisResult(Base):
     __tablename__ = "analysis_results"

@@ -70,7 +70,10 @@ async def upload_song(
         gemini_feedback = ai_engine.get_vocal_feedback(
             pitch_score=pitch_score_input,
             tempo_score=tempo_score_input,
-            avg_volume=volume_score_input
+            avg_volume=volume_score_input,
+            pitch_hz_avg=analysis_values.get("pitch_hz_avg", 0.0), # 추가
+            tempo_bpm=analysis_values.get("tempo_bpm", 0.0),       # 추가
+            volume_rms_avg=analysis_values.get("volume_rms_avg", 0.0) # 추가
         )
 
         # =========================
