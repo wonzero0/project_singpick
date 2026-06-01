@@ -21,6 +21,9 @@ interface DownloadResult {
 }
 
 export function Session() {
+
+  console.log("SESSION FILE VERSION 999");
+  
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -43,6 +46,19 @@ export function Session() {
   // 🔥 핵심
   const [showNextButton, setShowNextButton] = useState(false);
   const [showFeedbackButton, setShowFeedbackButton] = useState(false);
+
+  const startedRef = useRef(false);
+
+  useEffect(() => {
+    if (stage !== "playing") return;
+    if (startedRef.current) return;
+
+    startedRef.current = true;
+
+    fetch("/session/start", {
+      method: "POST",
+    });
+  }, [stage]);
 
   const currentSong = useMemo(
     () => reservedSongs[currentIndex],
@@ -104,7 +120,7 @@ export function Session() {
   { time: 171.5, text: "당신의 한숨 그 깊일 이해할 순 없겠지만" },
   { time: 179.0, text: "괜찮아요 내가 안아줄게요" },
   { time: 185.7, text: "남들 눈엔 힘 빠지는" },
-  { time: 189.8, text: "한숨으로 보일진 몰라도 나는 알고 있죠" },
+  { time: 251.8, text: "한숨으로 보일진 몰라도 나는 알고 있죠" },
   { time: 197.3, text: "작은 한숨 내뱉기도 어려운 하루를 보냈다는 걸" },
   { time: 204.6, text: "이제 다른 생각은 마요" },
   { time: 210.4, text: "깊이 숨을 쉬어봐요" },
@@ -285,6 +301,9 @@ useEffect(() => {
 
   const handleAudioEnd = async () => {
     console.log(`🎵 곡 종료 - currentIndex: ${currentIndex}, 전체: ${reservedSongs.length}`);
+    await fetch("/session/stop", {
+      method: "POST",
+    });
     
     try {
       await fetch("/led/stop", {
@@ -296,7 +315,13 @@ useEffect(() => {
 
     // 현재 곡이 마지막인지 확인
     if (currentIndex >= reservedSongs.length - 1) {
-      console.log("✅ 마지막 곡 완료 → Feedback 페이지로 이동");
+
+      await fetch("/session/end", {
+        method: "POST",
+      });
+
+      console.log("✅ 세션 종료");
+
       setTimeout(() => {
         navigate("/feedback");
       }, 500);
@@ -347,18 +372,29 @@ useEffect(() => {
   // =========================
   // 다음 곡
   // =========================
-  const handleNextSong = () => {
-    setShowNextButton(false);
+const handleNextSong = async () => {
 
-    const nextIndex = currentIndex + 1;
+  console.log("NEXT BUTTON CLICK");
 
-    if (nextIndex >= reservedSongs.length) {
-      setStage("complete");
-      return;
-    }
+  setShowNextButton(false);
 
-    setCurrentIndex(nextIndex);
-  };
+  startedRef.current = false;
+
+  await fetch("/session/next", {
+    method: "POST",
+  });
+
+  const nextIndex = currentIndex + 1;
+
+  console.log("MOVE TO SONG", nextIndex);
+
+  if (nextIndex >= reservedSongs.length) {
+    setStage("complete");
+    return;
+  }
+
+  setCurrentIndex(nextIndex);
+};
 
   // =========================
   // 피드백 이동

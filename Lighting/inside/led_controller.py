@@ -1,16 +1,25 @@
 import serial
 import platform
-import time
 
+arduino = None
 port = 'COM4' if platform.system() == 'Windows' else '/dev/ttyACM0'
-arduino = serial.Serial(port, 9600)
 
-time.sleep(2)
+try:
+    arduino = serial.Serial(port, 9600)
+except Exception as e:
+    print("[Arduino] init failed:", e)
+    arduino = None
 
-# 🎵 노래 시작
+
 def start_led():
-    arduino.write(b'PLAY\n')
+    if arduino:
+        arduino.write(b'PLAY\n')
+    else:
+        print("[Arduino] skip start_led (no device)")
 
-# ⏹ 노래 종료
+
 def stop_led():
-    arduino.write(b'STOP\n')
+    if arduino:
+        arduino.write(b'STOP\n')
+    else:
+        print("[Arduino] skip stop_led (no device)")
