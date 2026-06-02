@@ -197,7 +197,7 @@ def analyze_song(wav_path):
         # =========================
         # 무음 처리
         # =========================
-        if volume < 0.008:
+        if volume < 0.02:
             print("⚠️ 무음 감지 - 분석 제외")
 
             with lock:
