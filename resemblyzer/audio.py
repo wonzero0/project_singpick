@@ -59,7 +59,7 @@ def trim_long_silences(wav):
     """
     [수정] webrtcvad 컴파일러 억까를 우회하기 위한 치트키 패치 버전
     기존의 침묵 제거(VAD) 로직을 건너뛰고 입력된 오디오 파형(wav)을 그대로 반환합니다.
-    대장님의 목소리 분석 및 노래 추천 핵심 기능(VoiceEncoder) 작동에는 전혀 지장이 없습니다.
+    소리 분석 및 노래 추천 핵심 기능(VoiceEncoder) 작동에는 전혀 지장이 없습니다.
     """
     return wav
 

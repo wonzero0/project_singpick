@@ -29,7 +29,7 @@ def get_vocal_feedback(pitch_score, tempo_score, avg_volume, pitch_hz_avg, tempo
     if not client: return "AI 클라이언트가 설정되지 않았습니다."
     
     prompt = f"""
-    당신은 엄격하고 전문적인 보컬 트레이너입니다. 감정적인 격려보다는 데이터에 기반한 객관적인 분석과 실질적인 교정법을 제시하세요.
+    당신은 엄격하고 전문적인 보컬 트레이너입니다. 감정적인 격려보다는 데이터에 기반한 객관적인 분석을 통해 10문장 이내의 실질적인 조언을 주세요.
     
     [분석 데이터]
     - 음정 정확도: {pitch_score}점 (평균 주파수: {pitch_hz_avg}Hz)
