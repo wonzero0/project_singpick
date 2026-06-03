@@ -30,9 +30,7 @@ SR = 22050
 os.makedirs(FEATURE_DIR, exist_ok=True)
 
 
-# =====================
 # 🔥 추가 (핵심 해결)
-# =====================
 def extract_single_wav(wav_path):
     """
     서버에서 사용하는 단일 wav 처리 함수
@@ -42,9 +40,7 @@ def extract_single_wav(wav_path):
     process_one_file(audio_dir, wav_name)
 
 
-# =====================
 # Demucs (vocals 추출)
-# =====================
 def separate_vocals(wav_path):
     subprocess.run(
         [
@@ -65,15 +61,11 @@ def separate_vocals(wav_path):
     )
 
 
-# =====================
 # Feature 추출
-# =====================
 def extract_features(y, sr):
     features = {}
 
-    # =====================
     # Pitch (F0)
-    # =====================
     f0, _, _ = librosa.pyin(
         y,
         fmin=librosa.note_to_hz("C2"),
@@ -95,42 +87,30 @@ def extract_features(y, sr):
     features["pitch_max"] = np.array([pitch_max])
     features["pitch_range"] = np.array([pitch_range])
 
-    # =====================
     # TEMPO
-    # =====================
     onset_env = librosa.onset.onset_strength(y=y, sr=sr)
     tempo = librosa.beat.tempo(onset_envelope=onset_env, sr=sr)
     tempo_value = float(tempo[0]) if len(tempo) > 0 else 0.0
     features["tempo"] = np.array([tempo_value])
 
-    # =====================
     # RMS
-    # =====================
     features["rms"] = librosa.feature.rms(y=y)[0]
 
-    # =====================
     # MFCC
-    # =====================
     features["mfcc"] = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
 
-    # =====================
     # Spectral features
-    # =====================
     features["spectral_centroid"] = librosa.feature.spectral_centroid(y=y, sr=sr)[0]
     features["spectral_bandwidth"] = librosa.feature.spectral_bandwidth(y=y, sr=sr)[0]
     features["spectral_rolloff"] = librosa.feature.spectral_rolloff(y=y, sr=sr)[0]
 
-    # =====================
     # ZCR
-    # =====================
     features["zcr"] = librosa.feature.zero_crossing_rate(y)[0]
 
     return features
 
 
-# =====================
 # 1개 파일 처리
-# =====================
 def process_one_file(audio_dir, wav_name):
     wav_path = os.path.join(audio_dir, wav_name)
 
@@ -145,6 +125,7 @@ def process_one_file(audio_dir, wav_name):
     print(f"[PROCESS] {os.path.basename(wav_path)}")
 
     vocals_path = wav_path
+    vocals_path = separate_vocals(wav_path)
 
     if not os.path.exists(vocals_path):
         print(f"[SKIP] vocals not found")
@@ -170,9 +151,7 @@ def process_one_file(audio_dir, wav_name):
     print(f"[DONE] Features saved → {out_dir}")
 
 
-# =====================
 # batch 실행
-# =====================
 if __name__ == "__main__":
 
     for f in os.listdir(AUDIO_DIR):

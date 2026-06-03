@@ -22,7 +22,6 @@ export function MainReservation() {
   const [lastStatus, setLastStatus] = useState("none");
   const [songsLoading, setSongsLoading] = useState(false);
   const [songsError, setSongsError] = useState("");
-  const [reservingSongId, setReservingSongId] = useState<number | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -118,38 +117,13 @@ export function MainReservation() {
 
   const isReserved = (songId: number) => reservedSongs.some((s) => s.id === songId);
 
-  const handleReserve = async (song: Song) => {
+  const handleReserve = (song: Song) => {
     if (isReserved(song.id)) return;
     if (reservedSongs.length >= remainingSongs) {
       alert("예약 가능한 곡 수를 모두 사용했습니다.");
       return;
     }
-
-    if (!song.ky_number) {
-      alert("예약할 수 없는 곡입니다. KY 번호가 없습니다.");
-      return;
-    }
-
-    try {
-      setReservingSongId(song.id);
-
-      const res = await fetch(
-        `/library/reserve?ky_number=${encodeURIComponent(song.ky_number)}`,
-        { method: "POST" }
-      );
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => null);
-        throw new Error(errorData?.detail ?? "예약 요청 실패");
-      }
-
-      setReservedSongs((prev) => [...prev, song]);
-    } catch (error) {
-      console.error("예약 실패:", error);
-      alert("예약 정보를 DB에 저장하지 못했습니다. 다시 시도해주세요.");
-    } finally {
-      setReservingSongId(null);
-    }
+    setReservedSongs((prev) => [...prev, song]);
   };
 
   const handleRemove = (songId: number) => {
@@ -219,7 +193,7 @@ export function MainReservation() {
               {isReserved(song.id) ? (
                 <button onClick={() => handleRemove(song.id)} className="px-8 py-3 bg-red-500/20 border-2 border-red-400 text-red-300 rounded-xl font-medium hover:bg-red-500/30 transition-all">취소</button>
               ) : (
-                <button onClick={() => handleReserve(song)} disabled={reservedSongs.length >= remainingSongs || reservingSongId === song.id} className={`px-8 py-3 rounded-xl font-medium transition-all ${reservedSongs.length >= remainingSongs || reservingSongId === song.id ? "bg-gray-500/20 border-2 border-gray-500/30 text-gray-400 cursor-not-allowed" : "bg-cyan-500/20 border-2 border-cyan-400 text-cyan-200 hover:bg-cyan-500/30"}`}>{reservingSongId === song.id ? "저장 중" : "예약"}</button>
+                <button onClick={() => handleReserve(song)} disabled={reservedSongs.length >= remainingSongs} className={`px-8 py-3 rounded-xl font-medium transition-all ${reservedSongs.length >= remainingSongs ? "bg-gray-500/20 border-2 border-gray-500/30 text-gray-400 cursor-not-allowed" : "bg-cyan-500/20 border-2 border-cyan-400 text-cyan-200 hover:bg-cyan-500/30"}`}>예약</button>
               )}
             </div>
           ))}

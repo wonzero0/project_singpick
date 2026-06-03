@@ -84,57 +84,114 @@ export default function Login() {
       flex-col
       items-center
       pt-14
+      w-screen
+      min-h-[100dvh]
+      bg-[#DDE6ED]
+      flex
+      flex-col
+      items-center
+      justify-center
     ">
 
       <h1 className="text-5xl font-bold mb-8">
         회원 로그인
       </h1>
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
 
-        <input
-          type="tel"
-          value={phone}
-          readOnly
-          placeholder="전화번호 입력 (010 포함)"
-          onClick={() => setActiveInput("phone")}
-          className="
-            w-[520px]
-            h-[58px]
-            rounded-xl
-            px-5
-            text-xl
-            bg-white
-            border-2
-            border-[#AAB7C4]
-            shadow-sm
-            placeholder:text-gray-500
-            focus:outline-none
-          "
-        />
+  <div className="relative">
+    <input
+      type="tel"
+      value={phone}
+      readOnly
+      placeholder="전화번호 입력"
+      onClick={() => setActiveInput("phone")}
+      className={`
+        w-[520px]
+        h-[58px]
+        rounded-xl
+        px-5
+        text-xl
+        bg-white
+        border-2
+        shadow-sm
+        placeholder:text-gray-500
+        focus:outline-none
+        ${
+          activeInput === "phone"
+            ? "border-[#213555]"
+            : "border-[#AAB7C4]"
+        }
+      `}
+    />
 
-        <input
-          type="password"
-          value={password}
-          readOnly
-          placeholder="비밀번호 입력"
-          onClick={() => setActiveInput("password")}
-          className="
-            w-[520px]
-            h-[58px]
-            rounded-xl
-            px-5
-            text-xl
-            bg-white
-            border-2
-            border-[#AAB7C4]
-            shadow-sm
-            placeholder:text-gray-500
-            focus:outline-none
-          "
-        />
+    {activeInput === "phone" && (
+      <span
+        className="
+          absolute
+          top-1/2
+          -translate-y-1/2
+          cursor-blink
+          text-xl
+          font-bold
+          pointer-events-none
+        "
+        style={{
+          left: `${20 + phone.length * 12}px`,
+        }}
+      >
+        |
+      </span>
+    )}
+  </div>
 
-      </div>
+  <div className="relative">
+    <input
+      type="password"
+      value={password}
+      readOnly
+      placeholder="비밀번호 입력"
+      onClick={() => setActiveInput("password")}
+      className={`
+        w-[520px]
+        h-[58px]
+        rounded-xl
+        px-5
+        text-xl
+        bg-white
+        border-2
+        shadow-sm
+        placeholder:text-gray-500
+        focus:outline-none
+        ${
+          activeInput === "password"
+            ? "border-[#213555]"
+            : "border-[#AAB7C4]"
+        }
+      `}
+    />
+
+    {activeInput === "password" && (
+      <span
+        className="
+          absolute
+          top-1/2
+          -translate-y-1/2
+          cursor-blink
+          text-xl
+          font-bold
+          pointer-events-none
+        "
+        style={{
+          left: `${20 + password.length * 12}px`,
+        }}
+      >
+        |
+      </span>
+    )}
+  </div>
+
+</div>
 
       <p className="text-red-500 font-bold mt-4">
         {isLocked

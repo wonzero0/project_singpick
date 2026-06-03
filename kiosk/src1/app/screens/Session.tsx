@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router-dom";
 
 interface Song {
   id: number;
@@ -10,6 +10,7 @@ interface Song {
 type Stage =
   | "loading"
   | "countdown"
+  | "ready"
   | "playing"
   | "complete"
   | "error";
@@ -56,7 +57,7 @@ export function Session() {
   > = {
     "0+0": [
   { time: 0, text: "..." },
-  { time: 15.5, text: "검은 눈동자의 사각지대를 찾으러 가자" },
+  { time: 15.9, text: "검은 눈동자의 사각지대를 찾으러 가자" },
   { time: 28.5, text: "여름 코코아, 겨울 수박도" },
   { time: 35.5, text: "혼나지 않는 파라다이스" },
   { time: 44.5, text: "앞서가는 너의 머리가" },
@@ -120,48 +121,42 @@ export function Session() {
   { time: 0, text: "..." },
   { time: 17.5, text: "나를 사랑으로 채워줘요" },
   { time: 21.0, text: "사랑의 배터리가 다 됐나 봐요" },
-  { time: 24.6, text: "당신 없인 못살아 정말 나는 못살아" },
+  { time: 24.7, text: "당신 없인 못살아 정말 나는 못살아" },
   { time: 29.0, text: "당신은 나의 배터리" },
   { time: 32.6, text: "얼짱이 아니라도 좋아요" },
   { time: 36.5, text: "몸짱이 아니라도 좋아요" },
   { time: 40.0, text: "나만을 위해줄 당신이 바로 내겐 짱이랍니다" },
   { time: 47.2, text: "한번 더 나를 안아주세요" },
   { time: 51.2, text: "가슴이 터지도록 안아주세요" },
-  { time: 55.6, text: "사랑의 약발이 떨어졌나봐 당신이 필요해요" },
-  { time: 61.7, text: "나를 사랑으로 채워줘요" },
-  { time: 65.3, text: "사랑의 배터리가 다 됐나 봐요" },
+  { time: 54.9, text: "사랑의 약발이 떨어졌나봐 당신이 필요해요" },
+  { time: 61.5, text: "나를 사랑으로 채워줘요" },
+  { time: 65.1, text: "사랑의 배터리가 다 됐나 봐요" },
   { time: 68.8, text: "당신 없인 못살아 정말 나는 못살아" },
   { time: 73.0, text: "당신은 나의 배터리" },
-  { time: 76.0, text: "내겐 당신만이 전부예요" },
+  { time: 76.2, text: "내겐 당신만이 전부예요" },
   { time: 79.6, text: "당신이 너무 좋아 완전 좋아요" },
-  { time: 84.2, text: "하나뿐인 내 사랑 둘도 없는 내 사랑" },
-
+  { time: 83.3, text: "하나뿐인 내 사랑 둘도 없는 내 사랑" },
   { time: 87.8, text: "당신이 짱이랍니다" },
-
-  { time: 89.2, text: "사랑을 가득 넣어 주세요" },
-  { time: 93.3, text: "가슴에 넘치도록 넣어주세요" },
-  { time: 96.0, text: "사랑의 약발이 떨어졌나봐 나 지금 외로워요" },
-
-  { time: 99.7, text: "나를 사랑으로 채워줘요" },
-  { time: 103.3, text: "사랑의 배터리가 다 됐나 봐요" },
-  { time: 106.1, text: "당신 없인 못살아 정말 나는 못살아" },
-  { time: 109.9, text: "당신은 나의 배터리" },
-
-  { time: 112.1, text: "내겐 당신만이 전부예요" },
-  { time: 115.9, text: "당신이 너무 좋아 완전 좋아요" },
-  { time: 118.6, text: "하나뿐인 내 사랑 둘도 없는 내 사랑" },
-  { time: 120.8, text: "당신이 짱이랍니다" },
-
-  { time: 123.1, text: "아무리 힘든 날에도 당신만 있다면" },
-  { time: 126.0, text: "힘들지 않아 나는 슬프지 않아 당신 곁이라면" },
-
-  { time: 130.2, text: "내겐 당신만이 전부예요" },
-  { time: 132.9, text: "당신이 너무 좋아 완전 좋아요" },
-  { time: 136.4, text: "하나뿐인 내 사랑 둘도 없는 내 사랑" },
-  { time: 139.8, text: "당신이 짱이랍니다" },
-
-  { time: 142.0, text: "당신이 짱이랍니다" },
-  { time: 145.0, text: "당신이 짱이랍니다" }
+  { time: 91.2, text: "사랑을 가득 넣어 주세요" },
+  { time: 95.0, text: "가슴에 넘치도록 넣어주세요" },
+  { time: 99.1, text: "사랑의 약발이 떨어졌나봐 나 지금 외로워요" },
+  { time: 105.5, text: "나를 사랑으로 채워줘요" },
+  { time: 109.0, text: "사랑의 배터리가 다 됐나 봐요" },
+  { time: 113.1, text: "당신 없인 못살아 정말 나는 못살아" },
+  { time: 117.0, text: "당신은 나의 배터리" },
+  { time: 120.2, text: "내겐 당신만이 전부예요" },
+  { time: 123.5, text: "당신이 너무 좋아 완전 좋아요" },
+  { time: 127.5, text: "하나뿐인 내 사랑 둘도 없는 내 사랑" },
+  { time: 131.9, text: "당신이 짱이랍니다" },
+  { time: 136.0, text: "아무리 힘든 날에도 당신만 있다면" },
+  { time: 142.6, text: "힘들지 않아 나는 슬프지 않아 당신 곁이라면" },
+  { time: 150.0, text: "..." },
+  { time: 166.0, text: "내겐 당신만이 전부예요" },
+  { time: 169.4, text: "당신이 너무 좋아 완전 좋아요" },
+  { time: 173.5, text: "하나뿐인 내 사랑 둘도 없는 내 사랑" },
+  { time: 177.5, text: "당신이 짱이랍니다" },
+  { time: 181.0, text: "당신이 짱이랍니다" },
+  { time: 185.0, text: "당신이 짱이랍니다" }
     ]
   };
 
@@ -184,7 +179,7 @@ export function Session() {
         setShowFeedbackButton(false);
 
         const res = await fetch(
-          `http://127.0.0.1:8000/library/download_mr?song_info=${encodeURIComponent(
+          `/library/download_mr?song_info=${encodeURIComponent(
             `${currentSong.title} | ${currentSong.artist}`
           )}`
         );
@@ -238,7 +233,7 @@ export function Session() {
     if (stage !== "countdown") return;
 
     if (countdown <= 0) {
-      setStage("playing");
+      setStage("ready");
       return;
     }
 
@@ -257,7 +252,7 @@ useEffect(() => {
   // 🎵 MR 로딩 완료 → 미러볼 시작
   if (stage === "countdown") {
 
-    fetch("http://127.0.0.1:8000/led/play", {
+    fetch("/led/play", {
       method: "POST",
     });
   }
@@ -268,7 +263,7 @@ useEffect(() => {
     stage === "error"
   ) {
 
-    fetch("http://127.0.0.1:8000/led/stop", {
+    fetch("/led/stop", {
       method: "POST",
     });
   }
@@ -279,30 +274,41 @@ useEffect(() => {
 // 🎵 오디오 재생
 // =========================
 useEffect(() => {
+  if (stage !== "playing" || !audioRef.current || !audioUrl) return;
 
-  if (stage !== "playing") return;
+  const audioElement = audioRef.current;
 
-  audioRef.current?.play();
+  const handleAudioEnd = async () => {
+    console.log(`🎵 곡 종료 - currentIndex: ${currentIndex}, 전체: ${reservedSongs.length}`);
+    
+    try {
+      await fetch("/led/stop", {
+        method: "POST",
+      });
+    } catch (error) {
+      console.error("LED stop request failed", error);
+    }
 
-  // 🔥 MR 끝났을 때
-  audioRef.current!.onended = async () => {
-
-    // 🤍 흰 LED 복귀
-    await fetch("http://127.0.0.1:8000/led/stop", {
-      method: "POST",
-    });
-
-    const isLastSong =
-      currentIndex === reservedSongs.length - 1;
-
-    if (isLastSong) {
-      setShowFeedbackButton(true);
+    // 현재 곡이 마지막인지 확인
+    if (currentIndex >= reservedSongs.length - 1) {
+      console.log("✅ 마지막 곡 완료 → Feedback 페이지로 이동");
+      setTimeout(() => {
+        navigate("/feedback");
+      }, 500);
     } else {
+      console.log("➡️ 다음 곡 대기");
       setShowNextButton(true);
     }
   };
 
-}, [stage]);
+  // 이전 리스너 제거 후 새로 등록
+  audioElement.removeEventListener("ended", handleAudioEnd);
+  audioElement.addEventListener("ended", handleAudioEnd, { once: true });
+
+  return () => {
+    audioElement.removeEventListener("ended", handleAudioEnd);
+  };
+}, [stage, currentIndex, reservedSongs.length, audioUrl, navigate]);
 
   // =========================
   // 🎤 가사 싱크
@@ -365,12 +371,9 @@ useEffect(() => {
           <div className="w-20 h-20 border-4 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />
 
           <div className="text-3xl font-bold text-cyan-300">
-            MR 불러오는 중…
+            로딩 중…
           </div>
 
-          <div className="text-xl text-slate-400">
-            {currentSong?.title}
-          </div>
         </div>
       )}
 
@@ -385,7 +388,7 @@ useEffect(() => {
               animation: "flashText 0.35s infinite"
             }}
           >
-            노래가 시작됩니다.
+            이어폰을 착용해 주시기 바랍니다.
           </div>
           <style>
             {`
@@ -411,9 +414,60 @@ useEffect(() => {
         </div>
       )}
 
+      {stage === "ready" && (
+<div className="flex flex-col items-center gap-8">
+
+  <div className="text-4xl font-bold text-cyan-300">
+    🎵 MR 준비가 완료되었습니다
+  </div>
+
+  <div className="text-2xl text-slate-300">
+    아래 버튼을 눌러 노래를 시작하세요
+  </div>
+
+  <button
+    onClick={async () => {
+
+      if (!audioRef.current) {
+        return;
+      }
+
+      try {
+        await audioRef.current.play();
+
+        setStage("playing");
+
+      } catch (error) {
+        console.error("Audio play failed", error);
+      }
+    }}
+    className="
+      px-12
+      py-5
+      rounded-2xl
+      bg-gradient-to-r
+      from-cyan-500
+      to-blue-600
+      text-white
+      text-2xl
+      font-bold
+      shadow-lg
+      shadow-cyan-500/30
+      active:scale-95
+      transition
+    "
+  >
+    ▶ 노래 시작
+  </button>
+
+</div>
+)}
+
       {/* ========================= */}
       {/* 🎵 재생 화면 */}
       {/* ========================= */}
+      <audio ref={audioRef} src={audioUrl} playsInline preload="auto" />
+
       {stage === "playing" && (
         <div className="w-full max-w-4xl space-y-10 text-center">
 
@@ -426,8 +480,6 @@ useEffect(() => {
               {currentSong?.artist}
             </div>
           </div>
-
-          <audio ref={audioRef} src={audioUrl} autoPlay />
 
           <div className="space-y-4 mt-10">
             <div className="text-4xl font-bold text-white">

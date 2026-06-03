@@ -2,6 +2,20 @@
 @import './tailwind.css';
 @import './theme.css';
 
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+.cursor-blink {
+  animation: blink 1s infinite;
+}
+
 html,
 body,
 #root {
@@ -9,7 +23,6 @@ body,
   padding: 0;
   width: 100%;
   height: 100%;
-  overflow: hidden;
   background: #DDE6ED;
   font-family: sans-serif;
 }

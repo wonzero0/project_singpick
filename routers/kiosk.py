@@ -154,7 +154,6 @@ def update_server_led_state(arduino_command: str):
 
 @router.get("/current_user")
 def get_current_user():
-
     if current_kiosk_state["status"] == "member":
         return {
             "status": "member",
@@ -162,7 +161,6 @@ def get_current_user():
             "remaining_songs": current_kiosk_state["remaining_songs"],
             "led_status": current_kiosk_state["led_status"],
         }
-
     if current_kiosk_state["status"] == "guest":
         return {
             "status": "guest",
@@ -170,7 +168,6 @@ def get_current_user():
             "remaining_songs": current_kiosk_state["remaining_songs"],
             "led_status": current_kiosk_state["led_status"],
         }
-
     return {
         "status": "none",
         "user_id": "-",

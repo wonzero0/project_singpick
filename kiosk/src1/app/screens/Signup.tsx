@@ -67,29 +67,27 @@ export default function Signup() {
   return (
 
     <div className="
-      w-[1280px]
-      h-[800px]
-      overflow-hidden
+      w-screen
+      min-h-[100dvh]
       bg-[#DDE6ED]
-      mx-auto
       flex
       flex-col
+      gap-1
       items-center
-      pt-10
+      justify-center
     ">
 
-      <h1 className="text-5xl font-bold mb-8">
+      <h1 className="text-5xl font-bold mb-3">
         회원가입
       </h1>
 
-      <div className="flex flex-col gap-4">
-
+      <div className="relative">
         <input
           value={userId}
           readOnly
           placeholder="아이디 입력 (4자 이상)"
           onClick={() => setActiveInput("id")}
-          className="
+          className={`
             w-[520px]
             h-[58px]
             rounded-xl
@@ -97,56 +95,128 @@ export default function Signup() {
             text-xl
             bg-white
             border-2
-            border-[#AAB7C4]
             shadow-sm
             placeholder:text-gray-500
             focus:outline-none
-          "
+            ${
+              activeInput === "id"
+                ? "border-[#213555]"
+                : "border-[#AAB7C4]"
+            }
+          `}
         />
 
-        <input
-          type="tel"
-          value={phone}
-          readOnly
-          placeholder="전화번호 입력 (010 포함)"
-          onClick={() => setActiveInput("phone")}
-          className="
-            w-[520px]
-            h-[58px]
-            rounded-xl
-            px-5
-            text-xl
-            bg-white
-            border-2
-            border-[#AAB7C4]
-            shadow-sm
-            placeholder:text-gray-500
-            focus:outline-none
-          "
-        />
+        {activeInput === "id" && (
+          <span
+            className="
+              absolute
+              top-1/2
+              -translate-y-1/2
+              cursor-blink
+              text-xl
+              font-bold
+              pointer-events-none
+            "
+      style={{
+        left: `${20 + userId.length * 12}px`,
+      }}
+    >
+      |
+    </span>
+  )}
+</div>
 
-        <input
-          type="password"
-          value={password}
-          readOnly
-          placeholder="비밀번호 입력"
-          onClick={() => setActiveInput("password")}
-          className="
-            w-[520px]
-            h-[58px]
-            rounded-xl
-            px-5
-            text-xl
-            bg-white
-            border-2
-            border-[#AAB7C4]
-            shadow-sm
-            placeholder:text-gray-500
-            focus:outline-none
-          "
-        />
+        <div className="relative">
+  <input
+    type="tel"
+    value={phone}
+    readOnly
+    placeholder="전화번호 입력 (010 포함)"
+    onClick={() => setActiveInput("phone")}
+    className={`
+      w-[520px]
+      h-[58px]
+      rounded-xl
+      px-5
+      text-xl
+      bg-white
+      border-2
+      shadow-sm
+      placeholder:text-gray-500
+      focus:outline-none
+      ${
+        activeInput === "phone"
+          ? "border-[#213555]"
+          : "border-[#AAB7C4]"
+      }
+    `}
+  />
 
-      </div>
+  {activeInput === "phone" && (
+    <span
+      className="
+        absolute
+        top-1/2
+        -translate-y-1/2
+        cursor-blink
+        text-xl
+        font-bold
+        pointer-events-none
+      "
+      style={{
+        left: `${20 + phone.length * 12}px`,
+      }}
+    >
+      |
+    </span>
+  )}
+</div>
+
+        <div className="relative">
+  <input
+    type="password"
+    value={password}
+    readOnly
+    placeholder="비밀번호 입력 (숫자 6개)"
+    onClick={() => setActiveInput("password")}
+    className={`
+      w-[520px]
+      h-[58px]
+      rounded-xl
+      px-5
+      text-xl
+      bg-white
+      border-2
+      shadow-sm
+      placeholder:text-gray-500
+      focus:outline-none
+      ${
+        activeInput === "password"
+          ? "border-[#213555]"
+          : "border-[#AAB7C4]"
+      }
+    `}
+  />
+
+  {activeInput === "password" && (
+    <span
+      className="
+        absolute
+        top-1/2
+        -translate-y-1/2
+        cursor-blink
+        text-xl
+        font-bold
+        pointer-events-none
+      "
+      style={{
+        left: `${20 + password.length * 12}px`,
+      }}
+    >
+      |
+    </span>
+  )}
+</div>
 
       <p className="text-red-500 font-bold mt-4">
         {error}

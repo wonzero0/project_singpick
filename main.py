@@ -1,19 +1,17 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, APIRouter, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, HTMLResponse
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
-import models
-from database import engine, get_db
-from routers import booth, users, songs, library, kiosk, mr 
 from pathlib import Path
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse 
-from fastapi.routing import APIRoute
-import sys
-import os
-from fastapi.responses import HTMLResponse
 from urllib.parse import quote
-from fastapi import APIRouter
+import sys, os, subprocess, models
+from database import engine, get_db
+from routers import booth, users, songs, library, kiosk, mr
+
+
+
 sys.path.append(os.path.join(os.path.dirname(__file__), "ai_module"))
 try:
     from Lighting.inside.led_controller import start_led as start_led_arduino, stop_led as stop_led_arduino
@@ -31,9 +29,8 @@ BASE_DIR = Path(__file__).resolve().parent
 DIST_DIR = Path(__file__).resolve().parent / "kiosk" / "src1" / "dist"
 ASSETS_DIR = DIST_DIR / "assets"
 
-# ===============================
+
 # DB 테이블 생성
-# ===============================
 models.Base.metadata.create_all(bind=engine)
 
 
@@ -62,14 +59,10 @@ def ensure_reservation_schema():
 
 ensure_reservation_schema()
 
-# ===============================
 # FastAPI 앱 생성
-# ===============================
 app = FastAPI(title="SingPick Server")
 
-# ===============================
 # CORS 설정
-# ===============================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # 모든 도메인 허용 (테스트용), 운영 시 실제 도메인만 허용
@@ -78,9 +71,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ===============================
 # 라우터 등록
-# ===============================
 app.include_router(users.router)
 app.include_router(booth.router)
 app.include_router(songs.router)
@@ -88,10 +79,12 @@ app.include_router(library.router)
 app.include_router(kiosk.router)
 app.include_router(mr.router, prefix="/library")
 
-# ===============================
 # 정적 MR 파일 서비스
-# ===============================
 app.mount("/mr_files", StaticFiles(directory="downloaded_mrs"), name="mr_files")
+if DIST_DIR.exists():
+    if (DIST_DIR / "assets").exists():
+        app.mount("/assets", StaticFiles(directory=str(DIST_DIR / "assets")), name="assets")
+    app.mount("/dist", StaticFiles(directory=str(DIST_DIR)), name="dist")
 
 
 @app.post("/led/play")
@@ -105,21 +98,21 @@ def stop_led_endpoint():
     return {"status":"success"}
 
 
-# ===============================
 # 프론트엔드 React(Vite) 빌드본 정적 에셋 연동
-# ===============================
 # 실제 빌드 경로인 kiosk/src1/dist/assets를 연결
 
 
 
-if ASSETS_DIR.exists() and ASSETS_DIR.is_dir():
-    app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
+if DIST_DIR.exists():
+    # React 빌드 폴더 내의 assets (이미지, JS, CSS 등)
+    if (DIST_DIR / "assets").exists():
+        app.mount("/assets", StaticFiles(directory=str(DIST_DIR / "assets")), name="assets")
+    
+    # 그 외 정적 파일들
+    app.mount("/dist", StaticFiles(directory=str(DIST_DIR)), name="dist")
 
 
-
-# ===============================
 # 임시 노래 데이터 초기화 (10곡)
-# ===============================
 def init_dummy_songs(db: Session):
     if db.query(models.Song).count() == 0:
         dummy_songs = [
@@ -182,17 +175,27 @@ def on_startup():
     init_dummy_songs(db)
 
 
-# ===============================
 # 프론트엔드 SPA 라우팅 및 겹침 방지 설정
-# ===============================
 
 
+# 기존에 등록된 모든 API 및 시스템 경로 목록을 자동으로 추출하여 가로채기를 방어
+API_ROUTES = set()
+for route in app.routes:
+    if isinstance(route, APIRouter):
+        # /users/login -> 첫 번째 단어인 'users'를 추출
+        root_path = route.path.strip("/").split("/")[0]
+        if root_path:
+            API_ROUTES.add(root_path)
+
+# 추가로 방어해야 할 정적 파일 경로 및 문서 주소 수동 등록
+API_ROUTES.update(["docs", "redoc", "openapi.json", "mr_files", "assets"])
 
 @app.get("/qr", response_class=HTMLResponse)
 def show_qr_page(request: Request):
     # (컴퓨터 터미널에 ipconfig를 치면 나오는 IPv4 주소입니다.)
     
     target_url = str(request.base_url)
+    target_url = str(request.url_for("read_index", catchall="web"))
     qr_data = quote(target_url, safe="")
     
     # 오픈소스 QR 코드 API를 이용해 화면에 QR을 이쁘게 띄워주는 HTML
@@ -223,9 +226,7 @@ def show_qr_page(request: Request):
 
 
 
-# ===============================
 # 결과 저장 DB
-# ===============================
 results_db = {}
 
 
@@ -246,9 +247,7 @@ def get_result(user_id: str):
     return results_db.get(user_id, [])
 
 
-# ===============================
 # 세션 상태 변수 (중앙관리)
-# ===============================
 recording_flag = False
 stop_flag = False
 process = None
@@ -256,9 +255,7 @@ current_song = 0
 finished_flag = False
 session_active = True
 
-# ===============================
 # 세션 시작
-# ===============================
 @app.post("/session/start")
 def session_start():
 
@@ -288,9 +285,7 @@ def session_start():
     }
 
 
-# ===============================
 # 세션 종료
-# ===============================
 @app.post("/session/stop")
 def session_stop():
     global recording_flag
@@ -302,9 +297,7 @@ def session_stop():
     return {"status": "recording stopped"}
 
 
-# ===============================
 # 상태 확인
-# ===============================
 @app.get("/session/status")
 def session_status():
     return {
@@ -315,9 +308,7 @@ def session_status():
     }
 
 
-# ===============================
 # 다음 곡 / 녹음 중지 트리거
-# ===============================
 @app.post("/session/next")
 def session_next():
     global current_song, recording_flag
@@ -379,6 +370,16 @@ def save_final_result(data: dict):
     return {"status": "ok"}
 
 
-@app.get("/session/final_result")
-def get_final_result():
-    return final_session_result
+# 4. 마지막 catchall 라우터
+@app.get("/{catchall:path}")
+def read_index(catchall: str):
+    file_path = DIST_DIR / catchall
+    if file_path.exists() and file_path.is_file():
+        return FileResponse(str(file_path))
+    
+    index_path = DIST_DIR / "index.html"
+    if index_path.exists():
+        return FileResponse(str(index_path))
+    
+    return {"message": "프론트엔드 빌드 파일을 찾을 수 없습니다."}
+
