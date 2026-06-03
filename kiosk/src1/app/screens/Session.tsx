@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router";
 
 interface Song {
   id: number;
@@ -184,7 +184,7 @@ export function Session() {
         setShowFeedbackButton(false);
 
         const res = await fetch(
-          `/library/download_mr?song_info=${encodeURIComponent(
+          `http://127.0.0.1:8000/library/download_mr?song_info=${encodeURIComponent(
             `${currentSong.title} | ${currentSong.artist}`
           )}`
         );
@@ -257,7 +257,7 @@ useEffect(() => {
   // 🎵 MR 로딩 완료 → 미러볼 시작
   if (stage === "countdown") {
 
-    fetch("/led/play", {
+    fetch("http://127.0.0.1:8000/led/play", {
       method: "POST",
     });
   }
@@ -268,7 +268,7 @@ useEffect(() => {
     stage === "error"
   ) {
 
-    fetch("/led/stop", {
+    fetch("http://127.0.0.1:8000/led/stop", {
       method: "POST",
     });
   }
@@ -279,45 +279,30 @@ useEffect(() => {
 // 🎵 오디오 재생
 // =========================
 useEffect(() => {
-  if (stage !== "playing" || !audioRef.current || !audioUrl) return;
 
-  const audioElement = audioRef.current;
+  if (stage !== "playing") return;
 
-  const handleAudioEnd = async () => {
-    console.log(`🎵 곡 종료 - currentIndex: ${currentIndex}, 전체: ${reservedSongs.length}`);
-    
-    try {
-      await fetch("/led/stop", {
-        method: "POST",
-      });
-    } catch (error) {
-      console.error("LED stop request failed", error);
-    }
+  audioRef.current?.play();
 
-    // 현재 곡이 마지막인지 확인
-    if (currentIndex >= reservedSongs.length - 1) {
-      console.log("✅ 마지막 곡 완료 → Feedback 페이지로 이동");
-      setTimeout(() => {
-        navigate("/feedback");
-      }, 500);
+  // 🔥 MR 끝났을 때
+  audioRef.current!.onended = async () => {
+
+    // 🤍 흰 LED 복귀
+    await fetch("http://127.0.0.1:8000/led/stop", {
+      method: "POST",
+    });
+
+    const isLastSong =
+      currentIndex === reservedSongs.length - 1;
+
+    if (isLastSong) {
+      setShowFeedbackButton(true);
     } else {
-      console.log("➡️ 다음 곡 대기");
       setShowNextButton(true);
     }
   };
 
-  // 이전 리스너 제거 후 새로 등록
-  audioElement.removeEventListener("ended", handleAudioEnd);
-  audioElement.addEventListener("ended", handleAudioEnd, { once: true });
-  
-  audioElement.play().catch((error) => {
-    console.error("Audio play failed", error);
-  });
-
-  return () => {
-    audioElement.removeEventListener("ended", handleAudioEnd);
-  };
-}, [stage, currentIndex, reservedSongs.length, audioUrl, navigate]);
+}, [stage]);
 
   // =========================
   // 🎤 가사 싱크

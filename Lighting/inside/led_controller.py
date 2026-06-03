@@ -1,6 +1,5 @@
 import serial
 import platform
-import time
 
 # 1. 포트 설정
 port = 'COM4' if platform.system() == 'Windows' else '/dev/ttyACM1'
@@ -17,7 +16,6 @@ try:
 except (serial.SerialException, FileNotFoundError):
     print(f"⚠️ 경고: 포트 {port}를 찾을 수 없습니다. LED 기능을 비활성화합니다.")
 
-# 🎵 노래 시작
 def start_led():
     if arduino is not None:
         try:
@@ -27,7 +25,6 @@ def start_led():
     else:
         print("LED 모듈이 연결되지 않아 동작을 건너뜁니다 (PLAY).")
 
-# ⏹ 노래 종료
 def stop_led():
     if arduino is not None:
         try:

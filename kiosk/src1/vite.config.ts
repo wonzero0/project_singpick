@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
 const backendTarget =
-  process.env.VITE_BACKEND_ORIGIN || 'http://localhost:8000'
+  process.env.VITE_BACKEND_ORIGIN || 'http://127.0.0.1:8000'
 
 const apiProxy: Record<string, { target: string; changeOrigin: boolean }> = [
   '/library',
@@ -14,6 +14,7 @@ const apiProxy: Record<string, { target: string; changeOrigin: boolean }> = [
   '/songs',
   '/booth',
   '/mr_files',
+  '/session',
 ].reduce((proxy, route) => {
   proxy[route] = {
     target: backendTarget,
@@ -23,8 +24,15 @@ const apiProxy: Record<string, { target: string; changeOrigin: boolean }> = [
 }, {} as Record<string, { target: string; changeOrigin: boolean }>)
 
 export default defineConfig({
-  envDir: path.resolve(__dirname, '../..'),
+  root: __dirname,
   plugins: [react(), tailwindcss()],
+
+  build: {
+    rollupOptions: {
+      input: path.resolve(__dirname, 'index.html'), // 🔥 핵심
+    },
+  },
+
   server: {
     host: '0.0.0.0',
     port: 5173,

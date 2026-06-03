@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from google import genai  # 최신 라이브러리는 여기서 genai 클라이언트를 가져옵니다.
+from google import genai
 from dotenv import load_dotenv
 
 # 1. 경로 설정 및 환경 변수 로드

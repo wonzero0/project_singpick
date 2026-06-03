@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 import models
 from database import engine, get_db
 from routers import booth, users, songs, library, kiosk, mr 
+from pathlib import Path
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse 
 from fastapi.routing import APIRoute
@@ -12,8 +13,23 @@ import sys
 import os
 from fastapi.responses import HTMLResponse
 from urllib.parse import quote
+from fastapi import APIRouter
 sys.path.append(os.path.join(os.path.dirname(__file__), "ai_module"))
-from Lighting.inside.led_controller import start_led as start_led_arduino, stop_led as stop_led_arduino
+try:
+    from Lighting.inside.led_controller import start_led as start_led_arduino, stop_led as stop_led_arduino
+except Exception as e:
+    print("[WARN] Arduino disabled:", e)
+
+    def start_led_arduino():
+        pass
+
+    def stop_led_arduino():
+        pass
+import subprocess
+
+BASE_DIR = Path(__file__).resolve().parent
+DIST_DIR = Path(__file__).resolve().parent / "kiosk" / "src1" / "dist"
+ASSETS_DIR = DIST_DIR / "assets"
 
 # ===============================
 # DB 테이블 생성
@@ -93,15 +109,12 @@ def stop_led_endpoint():
 # 프론트엔드 React(Vite) 빌드본 정적 에셋 연동
 # ===============================
 # 실제 빌드 경로인 kiosk/src1/dist/assets를 연결
-DIST_DIR = "kiosk/src1/dist"
-ASSETS_DIR = os.path.join(DIST_DIR, "assets")
 
-if os.path.exists(ASSETS_DIR):
-    app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
 
-# dist 폴더 루트에 있는 정적 파일(logo.png 등)을 직접 제공
-if os.path.exists(DIST_DIR):
-    app.mount("/dist", StaticFiles(directory=DIST_DIR), name="dist")
+
+if ASSETS_DIR.exists() and ASSETS_DIR.is_dir():
+    app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
+
 
 
 # ===============================
@@ -173,23 +186,13 @@ def on_startup():
 # 프론트엔드 SPA 라우팅 및 겹침 방지 설정
 # ===============================
 
-# 기존에 등록된 모든 API 및 시스템 경로 목록을 자동으로 추출하여 가로채기를 방어
-API_ROUTES = set()
-for route in app.routes:
-    if isinstance(route, APIRoute):
-        # /users/login -> 첫 번째 단어인 'users'를 추출
-        root_path = route.path.strip("/").split("/")[0]
-        if root_path:
-            API_ROUTES.add(root_path)
 
-# 추가로 방어해야 할 정적 파일 경로 및 문서 주소 수동 등록
-API_ROUTES.update(["docs", "redoc", "openapi.json", "mr_files", "assets"])
 
 @app.get("/qr", response_class=HTMLResponse)
 def show_qr_page(request: Request):
     # (컴퓨터 터미널에 ipconfig를 치면 나오는 IPv4 주소입니다.)
     
-    target_url = str(request.url_for("read_index", catchall="web"))
+    target_url = str(request.base_url)
     qr_data = quote(target_url, safe="")
     
     # 오픈소스 QR 코드 API를 이용해 화면에 QR을 이쁘게 띄워주는 HTML
@@ -218,20 +221,164 @@ def show_qr_page(request: Request):
     """
     return html_content
 
-@app.get("/{catchall:path}")
-def read_index(catchall: str):
-    # 1. 요청 경로가 백엔드 API 경로로 시작하면, 가로채지 않고 원래 API 라우터로 넘김
-    first_segment = catchall.strip("/").split("/")[0]
-    if first_segment in API_ROUTES:
-        # 이 조건문이 참이 되면 아래의 파일 리턴을 무시하고, FastAPI 내부에서 알아서 원래 API 주소로 매칭
-        from fastapi.exceptions import HTTPException
-        raise HTTPException(status_code=404, detail="API Not Found")
-    
-    # 2. API 경로가 아니고 일반 화면 이동 요청인 경우 React의 index.html을 뿌려줌
-    index_path = os.path.join(DIST_DIR, "index.html")
-    if os.path.exists(index_path):
-        return FileResponse(index_path)
-    
-    # 3. 만약 빌드 파일이 없는 경우 임시 안내 메시지 출력
-    return {"message": "SingPick 서버가 구동 중이나 프론트엔드 빌드 파일(dist)을 찾을 수 없습니다."}
 
+
+# ===============================
+# 결과 저장 DB
+# ===============================
+results_db = {}
+
+
+@app.post("/result")
+def save_result(data: dict):
+    user_id = data.get("user_id", "unknown")
+
+    if user_id not in results_db:
+        results_db[user_id] = []
+
+    results_db[user_id].append(data)
+
+    return {"status": "saved"}
+
+
+@app.get("/result")
+def get_result(user_id: str):
+    return results_db.get(user_id, [])
+
+
+# ===============================
+# 세션 상태 변수 (중앙관리)
+# ===============================
+recording_flag = False
+stop_flag = False
+process = None
+current_song = 0
+finished_flag = False
+session_active = True
+
+# ===============================
+# 세션 시작
+# ===============================
+@app.post("/session/start")
+def session_start():
+
+    global recording_flag
+    global current_song
+    global process
+    global finished_flag
+    global session_active
+
+    recording_flag = True
+    current_song = 1
+    finished_flag = False
+    session_active = True
+
+    print("🎤 세션 시작")
+    print(f"song={current_song}")
+
+    process = subprocess.Popen([
+        "python",
+        "-m",
+        "ai_module.karaoke_main"
+    ])
+
+    return {
+        "recording": True,
+        "song": 1
+    }
+
+
+# ===============================
+# 세션 종료
+# ===============================
+@app.post("/session/stop")
+def session_stop():
+    global recording_flag
+
+    recording_flag = False
+
+    print("🛑 녹음 종료")
+
+    return {"status": "recording stopped"}
+
+
+# ===============================
+# 상태 확인
+# ===============================
+@app.get("/session/status")
+def session_status():
+    return {
+        "recording": recording_flag,
+        "song": current_song,
+        "finished": finished_flag,
+        "session_active": session_active
+    }
+
+
+# ===============================
+# 다음 곡 / 녹음 중지 트리거
+# ===============================
+@app.post("/session/next")
+def session_next():
+    global current_song, recording_flag
+
+    current_song += 1
+    recording_flag = True
+
+    print(
+        f"🎤 다음곡 시작 "
+        f"(song={current_song})"
+    )
+
+    return {
+        "recording": recording_flag,
+        "song": current_song
+    }
+
+if ASSETS_DIR.exists() and ASSETS_DIR.is_dir():
+    app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
+
+from fastapi.responses import FileResponse
+
+@app.get("/")
+def root():
+    return FileResponse(str(DIST_DIR / "index.html"))
+
+@app.post("/session/finish")
+def session_finish():
+
+    global finished_flag
+    global recording_flag
+
+    finished_flag = True
+    recording_flag = False
+
+    print("🏁 전체 세션 종료")
+
+    return {"status": "finished"}
+
+@app.post("/session/end")
+def session_end():
+    global session_active, finished_flag, recording_flag
+
+    session_active = False
+    finished_flag = True
+    recording_flag = False
+
+    print("🏁 전체 세션 종료 (FINAL SIGNAL)")
+
+    return {"status": "ended"}
+
+final_session_result = {}
+
+@app.post("/session/final_result")
+def save_final_result(data: dict):
+    global final_session_result
+    final_session_result = data
+    print("🏆 FINAL RESULT STORED:", data)
+    return {"status": "ok"}
+
+
+@app.get("/session/final_result")
+def get_final_result():
+    return final_session_result

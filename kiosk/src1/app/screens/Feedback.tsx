@@ -61,8 +61,9 @@ export function Feedback() {
 
   const handleExitClick = () => { setShowExitModal(true); };
 
-return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-neutral-950 text-white">
+  return (
+    // 가장 바깥쪽의 div를 하나로 통일했습니다.
+    <div className="min-h-screen w-screen overflow-y-auto overflow-x-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-neutral-950 text-white">
       
       {/* Top Bar */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-black/60 backdrop-blur-xl border-b border-white/10">
@@ -76,7 +77,7 @@ return (
       </div>
 
       {/* Content */}
-      <main className="pt-[120px] pb-12 px-8 h-full">
+      <div className="pt-[120px] pb-12 px-8">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* 추천 섹션 */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 shadow-xl">
@@ -106,9 +107,9 @@ return (
             </div>
           </motion.div>
         </div>
-      </main>
+      </div>
 
-      {/* 이용 종료 모달 (main 태그 밖에 배치) */}
+      {/* 이용 종료 모달 */}
       {showExitModal && (
         <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center px-6">
           <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-3xl p-8 shadow-2xl">

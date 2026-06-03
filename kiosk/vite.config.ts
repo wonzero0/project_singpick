@@ -46,7 +46,7 @@ function figmaAssetResolver() {
 }
 
 export default defineConfig({
-
+ 
   plugins: [
     figmaAssetResolver(),
     react(),
