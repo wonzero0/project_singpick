@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from google import genai
 from dotenv import load_dotenv
+from ai_module.recommend_by_similarity import recommend_songs
 
 # 1. 경로 설정 및 환경 변수 로드
 BASE_DIR = Path(__file__).resolve().parent.parent

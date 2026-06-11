@@ -4,8 +4,10 @@ import threading
 import requests
 import sounddevice as sd
 import numpy as np
+import traceback
 from scipy.io.wavfile import write
 from ai_module.analyze_voice_final import analyzeVoice
+import queue
 
 
 # 2. DEVICE_ID를 모듈 로딩 시점에 고정합니다. (이게 핵심입니다)
@@ -36,17 +38,44 @@ def get_device_id():
 # =========================
 # 서버 / 설정
 # =========================
-SERVER_URL = "http://192.168.0.236:8000"
+SERVER_URL_CANDIDATES = [
+    "http://192.168.0.251:8000",
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+]
 USER_ID = "abc"
 
+resolved_server_url = None
 stop_flag = threading.Event()
 
-analysis_threads = []
 session_results = []
-lock = threading.Lock()
+analysis_queue = queue.Queue()
+result_queue = queue.Queue()
 
 SAMPLE_RATE = 44100
-OUTPUT_DIR = "user_audio"
+OUTPUT_DIR = os.path.abspath("user_audio")
+
+
+def get_server_url():
+    global resolved_server_url
+
+    if resolved_server_url is not None:
+        return resolved_server_url
+
+    for url in SERVER_URL_CANDIDATES:
+        try:
+            r = requests.get(f"{url}/session/status", timeout=1.0)
+            if r.status_code == 200:
+                resolved_server_url = url
+                print(f"✅ SERVER_URL resolved to {url}")
+                return resolved_server_url
+        except Exception:
+            print(f"⚠️ SERVER_URL unreachable: {url}")
+
+    raise ConnectionError(
+        "No backend server available. Start the FastAPI server on one of: "
+        + ", ".join(SERVER_URL_CANDIDATES)
+    )
 
 
 # =========================
@@ -54,12 +83,35 @@ OUTPUT_DIR = "user_audio"
 # =========================
 def check_session_finished():
     try:
-        r = requests.get(f"{SERVER_URL}/session/status")
+        r = requests.get(f"{get_server_url()}/session/status")
         data = r.json()
 
-        return data.get("finished", False)
+        return data.get("session_active", True) is False
     except:
         return False
+
+def check_session_active():
+    try:
+        r = requests.get(f"{get_server_url()}/session/status")
+        data = r.json()
+        return data.get("session_active", True)
+    except:
+        return False
+
+def get_total_songs():
+
+    try:
+        r = requests.get(
+            f"{get_server_url()}/session/status"
+        )
+
+        return r.json().get(
+            "total_songs",
+            1
+        )
+
+    except:
+        return 1
 
 
 def wait_for_start(song_number):
@@ -67,25 +119,29 @@ def wait_for_start(song_number):
     print("⏳ MR 시작 대기 중...")
 
     while True:
-
         try:
-            res = requests.get(f"{SERVER_URL}/session/status")
+            res = requests.get(f"{get_server_url()}/session/status")
             data = res.json()
 
-            print(
-                f"recording={data.get('recording')} "
-                f"song={data.get('song')}"
-            )
+            recording = data.get("recording")
+            song = data.get("song")
+            session_active = data.get("session_active")
 
-            if (
-                data.get("recording")
-                and data.get("song") == song_number
-            ):
-                print(f"🎤 {song_number}곡 녹음 시작")
+            print(f"recording={recording} song={song}")
+
+            if session_active is False:
+                print("🏁 세션 종료 감지")
+                return False
+
+            if song == song_number and recording:
+                print(f"🎤 {song_number}곡 시작")
                 return True
 
+            if song == song_number and not recording:
+                print(f"🎤 {song_number}곡 대기 중... 녹음 신호 대기")
+
         except Exception as e:
-            print(e)
+            print("status error:", e)
 
         time.sleep(0.2)
 
@@ -93,13 +149,28 @@ def wait_for_start(song_number):
 # =========================
 # 녹음
 # =========================
-def record_audio(song_number):
+def record_audio(song_number, start_immediately=False):
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     path = os.path.join(OUTPUT_DIR, f"song_{song_number}.wav")
 
     device_id = get_device_id()   # 항상 여기서 결정
 
     print(f"🎤 using device_id = {device_id}")
+
+    if not start_immediately:
+        while True:
+            try:
+                res = requests.get(f"{get_server_url()}/session/status")
+                data = res.json()
+                if data.get("song") == song_number and data.get("recording"):
+                    break
+                if not data.get("session_active", True):
+                    print("🏁 세션 종료 감지, 녹음 중지")
+                    return None
+                print(f"🎤 녹음 시작 대기 중 ({song_number}곡) ...")
+            except Exception as e:
+                print("status error while waiting for record start:", e)
+            time.sleep(0.1)
 
     audio_data = []
 
@@ -108,36 +179,53 @@ def record_audio(song_number):
             print(status)
         audio_data.append(indata.copy())
 
-    try:
-        with sd.InputStream(
-            device=device_id,
-            samplerate=SAMPLE_RATE,
-            channels=1,
-            dtype="int16",
-            callback=callback
-        ):
-            while True:
+    print(f"🎤 record_audio thread 시작: song={song_number}, start_immediately={start_immediately}")
 
-                if stop_flag.is_set():
-                    break
+    attempt = 0
+    while True:
+        try:
+            with sd.InputStream(
+                device=device_id,
+                samplerate=SAMPLE_RATE,
+                channels=1,
+                dtype="int16",
+                callback=callback
+            ):
+                print(f"🎤 InputStream 열림: song={song_number}")
+                while True:
+                    if stop_flag.is_set():
+                        break
 
-                if check_stop():
-                    print("🛑 서버에서 녹음 종료")
-                    break
+                    if check_stop():
+                        print("🛑 서버에서 녹음 종료")
+                        break
 
-                time.sleep(0.1)
+                    if not check_session_active():
+                        break
 
-    except Exception as e:
-        print(f"❌ 녹음 실패: {e}")
-        return None
+                    time.sleep(0.1)
+            break
+
+        except Exception as e:
+            attempt += 1
+            print(f"❌ InputStream 열기 실패 (attempt {attempt}): {e}")
+            if attempt >= 10:
+                print("❌ 녹음 장치 열기 재시도 한계 도달")
+                return None
+            if not check_session_active():
+                print("🏁 세션이 비활성화되어 녹음 재시도를 중단합니다")
+                return None
+            time.sleep(0.2)
 
     if not audio_data:
+        print(f"⚠️ 녹음 데이터 없음: {path}")
         return None
 
     audio = np.concatenate(audio_data, axis=0)
     write(path, SAMPLE_RATE, audio)
 
     print(f"✅ 녹음 완료: {path}")
+    analysis_queue.put(path)
     return path
 
 
@@ -173,16 +261,57 @@ def generate_feedback(a):
     return f"{base}이며 {rhythm}, {vol}입니다."
 
 
+def result_collector():
+    print("📥 result_collector started")
+
+    while True:
+
+        result = result_queue.get()
+
+        if result == "STOP":
+            print("🛑 collector 종료")
+            break
+
+        session_results.append(result)
+
+        print("✅ Queue 결과 수신")
+        print(result)
+
+        try:
+            requests.post(
+                f"{get_server_url()}/result",
+                json={
+                    "user_id": USER_ID,
+                    "score": result["score"],
+                    "pitch": result["pitch"],
+                    "tempo": result["tempo"],
+                    "volume": result["volume"],
+                    "feedback": result["feedback"],
+                    "artist": result["artist"],
+                    "song": result["song"]
+                }
+            )
+
+            print("📤 서버 전송 완료")
+
+        except Exception as e:
+            print("SERVER SEND ERROR:", e)
+
+
 # =========================
 # 곡 분석 (핵심)
 # =========================
-def analyze_song(wav_path):
+def analyze_song(wav_path, result_queue):
+
     print(f"\n🧠 분석 시작: {wav_path}")
 
     try:
+        print("STEP1")
+
         result = analyzeVoice(wav_path)
 
-        print("✅ analyzeVoice 성공")
+        print("STEP2")
+        print(type(result))
         print(result)
 
         a = result["analysis_values"]
@@ -194,29 +323,22 @@ def analyze_song(wav_path):
         tempo = a["tempo_bpm"]
         volume = a["volume_rms_avg"]
 
-        # =========================
         # 무음 처리
-        # =========================
-        if volume < 0.008:
-            print("⚠️ 무음 감지 - 분석 제외")
-
-            with lock:
-                session_results.append({
-                    "score": 0,
-                    "pitch": pitch,
-                    "tempo": tempo,
-                    "volume": volume,
-                    "feedback": "음성 감지 실패",
-                    "artist": "없음",
-                    "song": "없음",
-                    "song_artist": "없음",
-                    "is_silent": True
-                })
+        if volume < 0.02:
+            result_queue.put({
+                "score": 0,
+                "pitch": pitch,
+                "tempo": tempo,
+                "volume": volume,
+                "feedback": "음성 감지 실패",
+                "artist": "없음",
+                "song": "없음",
+                "song_artist": "없음",
+                "is_silent": True
+            })
             return
 
-        # =========================
         # 점수 계산
-        # =========================
         score = 55
 
         if volume > 0.01:
@@ -239,52 +361,51 @@ def analyze_song(wav_path):
         top_song = recommendations[0] if recommendations else None
         top_artist = similar_artists[0] if similar_artists else "없음"
 
-        # =========================
-        # 저장
-        # =========================
-        with lock:
-            session_results.append({
-                "score": score,
-                "pitch": pitch,
-                "tempo": tempo,
-                "volume": volume,
-                "feedback": generate_feedback(a),
-                "artist": top_artist,
-                "song": top_song["title"] if top_song else "없음",
-                "song_artist": top_song["artist"] if top_song else "없음",
-                "is_silent": False
-            })
+        result_queue.put({
+            "score": score,
+            "pitch": pitch,
+            "tempo": tempo,
+            "volume": volume,
+            "feedback": generate_feedback(a),
+            "artist": top_artist,
+            "song": top_song["title"] if top_song else "없음",
+            "song_artist": top_song["artist"] if top_song else "없음",
+            "is_silent": False
+        })
 
-        print(
-            f"✅ 결과 저장 완료 "
-            f"(현재 곡 수={len(session_results)})"
-        )
+        print("✅ Queue 전송 완료")
 
-        print("현재 저장 결과")
-        print(session_results)
-
-        # 서버 전송
-        requests.post(
-            f"{SERVER_URL}/result",
-            json={
-                "user_id": USER_ID,
-                "score": score,
-                "pitch": pitch,
-                "tempo": tempo,
-                "volume": volume,
-                "feedback": generate_feedback(a),
-                "artist": top_artist,
-                "song": top_song["title"] if top_song else "없음"
-            }
-        )
-
-    except Exception as e:
-        print("❌ analyze_song 오류")
-        print(e)
+    except Exception:
+        with open("process_error.log", "a", encoding="utf-8") as f:
+            traceback.print_exc(file=f)
+        print("❌ process_error.log 확인")
 
     finally:
-        if os.path.exists(wav_path):
-            os.remove(wav_path)
+        try:
+            abs_path = os.path.abspath(wav_path)
+            print(f"🗑 삭제 시도: {abs_path}")
+            if os.path.exists(abs_path):
+                os.remove(abs_path)
+                print(f"🗑 삭제 완료: {abs_path}")
+            else:
+                print(f"⚠️ 삭제 대상 없음: {abs_path}")
+        except Exception as e:
+            print("❌ wav 삭제 실패", e)
+
+# =========================
+# 🔥 분석 워커 (추가)
+# =========================
+def analysis_worker():
+    print("🧠 analysis_worker started")
+    while True:
+        wav_path = analysis_queue.get()
+        print(f"🧠 analysis_worker received: {wav_path}")
+
+        if wav_path == "STOP":
+            print("🛑 analysis_worker 종료")
+            break
+
+        analyze_song(wav_path, result_queue)
 
 
 # =========================
@@ -293,6 +414,7 @@ def analyze_song(wav_path):
 def finalize_session():
 
     valid_results = [r for r in session_results if not r.get("is_silent", False)]
+    print(f"📊 수집된 결과 개수: {len(session_results)} (유효 {len(valid_results)})")
 
     print("\n==============================")
     print("🏆 최종 노래방 결과")
@@ -306,6 +428,24 @@ def finalize_session():
         print("\n🎵 전체 추천곡 TOP 1\n- 없음")
         print("\n📝 종합 피드백\n- 음성이 감지되지 않아 분석할 수 없습니다.")
         print("\n🎉 전체 세션 완료")
+
+        # 무음 감지 시에도 최종 결과 전송
+        try:
+            requests.post(
+                f"{get_server_url()}/session/final_result",
+                json={
+                    "final_score": 0,
+                    "avg_pitch": 0,
+                    "avg_tempo": 0,
+                    "avg_volume": 0,
+                    "top_artist": "없음",
+                    "top_song": "없음",
+                    "feedback": "음성이 감지되지 않아 분석할 수 없습니다."
+                }
+            )
+            print("📤 무음 최종 결과 서버 전송 완료")
+        except Exception as e:
+            print("FINAL RESULT SEND ERROR (SILENT):", e)
         return
 
     total_score = sum(r["score"] for r in valid_results)
@@ -362,20 +502,32 @@ def finalize_session():
     print("\n🎉 전체 세션 완료")
 
     try:
-        requests.post(f"{SERVER_URL}/session/final_result", json={
-            "final_score": final_score,
-            "avg_pitch": avg_pitch,
-            "avg_tempo": avg_tempo,
-            "avg_volume": avg_volume,
-            "top_artist": top_artist,
-            "top_song": top_song
+        final_feedback = generate_feedback({
+            "pitch_hz_avg": avg_pitch,
+            "tempo_bpm": avg_tempo,
+            "volume_rms_avg": avg_volume
         })
+
+        requests.post(
+            f"{get_server_url()}/session/final_result",
+            json={
+                "final_score": final_score,
+                "avg_pitch": avg_pitch,
+                "avg_tempo": avg_tempo,
+                "avg_volume": avg_volume,
+                "top_artist": top_artist,
+                "top_song": top_song,
+                "feedback": final_feedback
+            }
+        )
+
+    
     except Exception as e:
         print("FINAL RESULT SEND ERROR:", e)
 
 def check_stop():
     try:
-        r = requests.get(f"{SERVER_URL}/session/status")
+        r = requests.get(f"{get_server_url()}/session/status")
         return not r.json()["recording"]
     except:
         return False
@@ -385,38 +537,80 @@ def check_stop():
 # =========================
 def run_session():
 
-    song_number = 1
     session_results.clear()
+    total_songs = get_total_songs()
+
+    # 분석 워커는 별도 스레드로 실행하여 프로세스 간 큐/포크 문제를 제거합니다.
+    analysis_thread = threading.Thread(target=analysis_worker, daemon=False)
+    analysis_thread.start()
+
+    collector_thread = threading.Thread(target=result_collector, daemon=False)
+    collector_thread.start()
+
+    active_recordings = []
+    active_recording_song = None
+    last_recording = None
+    last_song = None
 
     while True:
-
-        # ✅ 세션 종료 체크 추가
         if check_session_finished():
             print("🏁 세션 종료 감지")
             break
 
-        started = wait_for_start(song_number)
+        try:
+            res = requests.get(f"{get_server_url()}/session/status")
+            status = res.json()
+        except Exception as e:
+            print("status poll error:", e)
+            time.sleep(0.2)
+            continue
 
-        if not started:
+        recording = status.get("recording", False)
+        song = status.get("song", 0)
+        session_active = status.get("session_active", True)
+
+        if song != last_song or recording != last_recording:
+            print(f"🔁 status update: song={song}, recording={recording}, active_recording_song={active_recording_song}")
+            last_song = song
+            last_recording = recording
+
+        if not session_active:
+            print("🏁 세션 inactive 감지")
             break
 
-        wav_path = record_audio(song_number)
+        if recording and active_recording_song != song:
+            print(f"🎤 녹음 시작 이벤트 감지: song={song}")
+            active_recording_song = song
 
-        if wav_path:
-            t = threading.Thread(
-                target=analyze_song,
-                args=(wav_path,),
+            recording_thread = threading.Thread(
+                target=record_audio,
+                args=(song, True),
+                daemon=False
             )
-            t.start()
-            analysis_threads.append(t)
+            active_recordings.append(recording_thread)
+            recording_thread.start()
 
-        song_number += 1
+        if not recording and active_recording_song is not None:
+            print(f"🎤 녹음 종료 이벤트 감지: song={song}")
+            active_recordings = [t for t in active_recordings if t.is_alive()]
+            active_recording_song = None
 
-    for t in analysis_threads:
-        t.join()
+        time.sleep(0.1)
+
+    for recording_thread in active_recordings:
+        if recording_thread.is_alive():
+            recording_thread.join()
+
+    # 분석 워커 중지 신호 전송 및 종료 대기
+    analysis_queue.put("STOP")
+    analysis_thread.join()
+
+    # 결과 수집기 중지 신호 전송 및 종료 대기
+    result_queue.put("STOP")
+    collector_thread.join()
 
     finalize_session()
 
 
 if __name__ == "__main__":
-    run_session() 
+    run_session()

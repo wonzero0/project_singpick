@@ -6,7 +6,7 @@ from fastapi import HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 # 보안 설정 (사용자 설정에 맞춰 수정 가능)
-SECRET_KEY = "your-very-secret-key-for-iot-project" 
+SECRET_KEY = os.getenv("SECRET_KEY") 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 
 

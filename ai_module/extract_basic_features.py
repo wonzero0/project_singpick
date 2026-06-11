@@ -125,11 +125,6 @@ def process_one_file(audio_dir, wav_name):
     print(f"[PROCESS] {os.path.basename(wav_path)}")
 
     vocals_path = wav_path
-    vocals_path = separate_vocals(wav_path)
-
-    if not os.path.exists(vocals_path):
-        print(f"[SKIP] vocals not found")
-        return
 
     y, sr = librosa.load(vocals_path, sr=SR, mono=True)
 

@@ -23,7 +23,7 @@ ALLOWED_EXTENSIONS = {".wav", ".mp3", ".mp4", ".m4a", ".flac"}
 
 
 # ============================================
-# 🌟 신규 추가: 진짜 DB에 예약을 생성해 주는 라우터
+# DB에 예약을 생성해 주는 라우터
 # ============================================
 @router.post("/reserve")
 def reserve_song_endpoint(request: RequestReserve, db: Session = Depends(get_db)):

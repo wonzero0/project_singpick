@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 import os
 import importlib
 import time
@@ -344,7 +345,16 @@ def reserve_song_endpoint(request: RequestReserve, db: Session = Depends(get_db)
             "status": "success", 
             "reservation_key": f"{BOOTH_ID}:{request.song_id}:{user_id}"
         }
-    except Exception as e:
+    except IntegrityError as e:
+        db.rollback()
+        print(f"[ERROR /kiosk/reserve] 데이터베이스 무결성 오류 발생: {e}")
+        # 409 Conflict는 중복된 리소스 생성 시 적절한 HTTP 상태 코드입니다.
+        raise HTTPException(status_code=409, detail=f"예약 중복 또는 제약 조건 위반: {str(e)}")
+    except SQLAlchemyError as e:
+        db.rollback()
+        print(f"[ERROR /kiosk/reserve] SQLAlchemy 오류 발생: {e}")
+        raise HTTPException(status_code=500, detail=f"데이터베이스 연동 중 오류 발생: {str(e)}")
+    except Exception as e: # 예상치 못한 다른 모든 오류를 처리합니다.
         db.rollback()
         print(f"[ERROR /kiosk/reserve] DB 저장 실패: {e}")
         raise HTTPException(status_code=500, detail=f"예약 중 오류 발생: {str(e)}")

@@ -7,15 +7,15 @@ export function Feedback() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState("-");
   const [showExitModal, setShowExitModal] = useState(false);
+  const [feedbackData, setFeedbackData] = useState<any>(null);
 
-  // 1. 서버 IP를 직접 적지 말고, 환경 변수(.env)에서 가져오거나 
-  //    접속한 브라우저의 호스트를 활용하는 방식을 권장합니다.
-  //    (라즈베리 파이로 옮길 땐 .env 파일의 IP만 수정하면 됩니다.)
+  // 서버 환경 설정
   const currentUrl = new URL(window.location.href);
   const configuredOrigin = import.meta.env.VITE_PUBLIC_ORIGIN;
   const configuredServerIp = import.meta.env.VITE_SERVER_IP;
   const isLocalHost =
     currentUrl.hostname === "localhost" ||
+    currentUrl.hostname === "127.0.0.1" ||
     currentUrl.hostname === "192.168.0.236";
 
   const mobileOrigin =
@@ -24,13 +24,10 @@ export function Feedback() {
       ? `${currentUrl.protocol}//${configuredServerIp}:${currentUrl.port}`
       : window.location.origin);
   
-  // 2. QR 코드가 접속할 실제 주소 
   const feedbackUrl = new URL("/web", mobileOrigin).toString();
-  
-  // 3. QR 이미지 생성 (주소 데이터를 인코딩하여 전달)
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(feedbackUrl)}`;
 
-  // ... useEffect 및 handle 함수들은 기존과 동일하게 유지 ...
+  // 사용자 정보 로드
   useEffect(() => {
     let isMounted = true;
     async function loadUserInfo() {
@@ -48,6 +45,24 @@ export function Feedback() {
     return () => { isMounted = false; clearInterval(interval); };
   }, []);
 
+  // 피드백 데이터 로드 (서버 연동)
+  useEffect(() => {
+    const fetchFeedback = async () => {
+      try {
+        const res = await fetch("/session/final_result");
+        const data = await res.json();
+        if (data) {
+          setFeedbackData(data);
+        }
+      } catch (err) {
+        console.error("피드백 데이터를 불러올 수 없습니다:", err);
+      }
+    };
+    fetchFeedback();
+    const interval = setInterval(fetchFeedback, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const handleGoHome = async () => {
     try {
       await fetch("/led/stop", { method: "POST" });
@@ -62,7 +77,6 @@ export function Feedback() {
   const handleExitClick = () => { setShowExitModal(true); };
 
   return (
-    // 가장 바깥쪽의 div를 하나로 통일했습니다.
     <div className="min-h-screen w-screen overflow-y-auto overflow-x-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-neutral-950 text-white">
       
       {/* Top Bar */}
@@ -79,6 +93,7 @@ export function Feedback() {
       {/* Content */}
       <div className="pt-[120px] pb-12 px-8">
         <div className="max-w-4xl mx-auto space-y-6">
+          
           {/* 추천 섹션 */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 shadow-xl">
             <div className="flex items-center gap-3 mb-6">
@@ -86,10 +101,24 @@ export function Feedback() {
               <h2 className="text-2xl font-bold">추천 가수 / 추천 곡</h2>
             </div>
             <div className="space-y-4">
-              <div className="bg-white/5 rounded-2xl p-6"><div className="text-cyan-300 mb-2">추천 가수</div><div className="text-3xl font-bold">아이유 (IU)</div></div>
-              <div className="bg-white/5 rounded-2xl p-6"><div className="text-cyan-300 mb-2">추천 곡</div><div className="text-3xl font-bold">밤편지</div></div>
+              <div className="bg-white/5 rounded-2xl p-6">
+                <div className="text-cyan-300 mb-2">사용자 음성과 가장 유사한 가수 Top 1</div>
+                <div className="text-3xl font-bold">{feedbackData?.top_artist || "분석 중..."}</div>
+              </div>
+              <div className="bg-white/5 rounded-2xl p-6">
+                <div className="text-cyan-300 mb-2">사용자 음성에 가장 잘 어울리는 곡 Top 1</div>
+                <div className="text-3xl font-bold">{feedbackData?.top_song || "분석 중..."}</div>
+              </div>
             </div>
           </motion.div>
+
+          {/* 한줄평 섹션 */}
+          {feedbackData && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 shadow-xl">
+              <div className="text-cyan-300 mb-2 font-bold">노래 스타일 한줄평</div>
+              <div className="text-xl">{feedbackData.feedback}</div>
+            </motion.div>
+          )}
 
           {/* QR 섹션 */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 shadow-xl">

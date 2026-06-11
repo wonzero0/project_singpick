@@ -2,6 +2,7 @@ import os
 import json
 import numpy as np
 import librosa
+import time
 
 from ai_module.extract_basic_features import extract_single_wav
 from ai_module.analyze_voice import analyze_voice
@@ -10,6 +11,7 @@ from ai_module.audio_utils import ensure_wav
 from sklearn.metrics.pairwise import cosine_similarity
 from resemblyzer import VoiceEncoder, preprocess_wav
 
+REFERENCE_DATA = None
 encoder = VoiceEncoder()
 
 
@@ -33,45 +35,88 @@ def load_embedding(path):
 
 
 def recommend(user_embedding):
-    data = load_reference()
+
+    preload_reference()
+
     results = []
 
-    for item in data:
-        try:
-            emb = load_embedding(item["embedding_file"])
-            score = cosine_sim(user_embedding, emb)
+    for item in REFERENCE_DATA:
 
-            results.append({
-                "title": item["title"],
-                "artist": item["artist"],
-                "score": score
-            })
+        score = cosine_sim(
+            user_embedding,
+            item["embedding"]
+        )
 
-        except Exception as e:
-            print(f"[ERROR] {e}")
-            continue
+        results.append({
+            "title": item["title"],
+            "artist": item["artist"],
+            "score": score
+        })
 
-    return sorted(results, key=lambda x: x["score"], reverse=True)[:10]
+    return sorted(
+        results,
+        key=lambda x: x["score"],
+        reverse=True
+    )[:10]
 
 
 def analyzeVoice(wav_path):
 
+    print("STEP1")
+
     wav_path = ensure_wav(wav_path)
-    voice_name = os.path.splitext(os.path.basename(wav_path))[0]
+
+    print("STEP2")
+
+    voice_name = os.path.splitext(
+        os.path.basename(wav_path)
+    )[0]
 
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    feature_dir = os.path.join(BASE_DIR, "features", voice_name)
+    feature_dir = os.path.join(
+        BASE_DIR,
+        "features",
+        voice_name
+    )
 
-    if not os.path.exists(feature_dir):
-        extract_single_wav(wav_path)
+    print("STEP3")
 
-    result = analyze_voice(feature_dir=feature_dir)
+    if os.path.exists(feature_dir):
+        import shutil
+        shutil.rmtree(feature_dir)
+
+    print("STEP4")
+
+    extract_single_wav(wav_path)
+
+    print("STEP5")
+
+    result = analyze_voice(
+        feature_dir=feature_dir
+    )
+
+    print("STEP6")
 
     wav = preprocess_wav(wav_path)
+
+    print("STEP7")
+    print("START EMBEDDING")
+    t = time.time()
+
     embedding = encoder.embed_utterance(wav)
 
+    print("END EMBEDDING", time.time() - t)
+
+    print("STEP8")
+
     y, sr = librosa.load(wav_path, sr=None)
+
+    print("STEP9")
+
     tempo = librosa.beat.tempo(y=y, sr=sr)
+
+    print("STEP10")
+
     bpm = float(tempo[0])
 
     result["analysis_values"]["tempo_bpm"] = bpm
@@ -85,3 +130,44 @@ def analyzeVoice(wav_path):
         "similar_songs": recs,
         "similar_artists": list(set([r["artist"] for r in recs]))
     }
+
+def preload_reference():
+
+    global REFERENCE_DATA
+
+    if REFERENCE_DATA is not None:
+        return
+
+    print("📦 Reference Loading...")
+
+    data = load_reference()
+
+    REFERENCE_DATA = []
+
+    for item in data:
+
+        try:
+            REFERENCE_DATA.append({
+                "title": item["title"],
+                "artist": item["artist"],
+                "embedding": load_embedding(
+                    item["embedding_file"]
+                )
+            })
+
+        except Exception as e:
+            print(e)
+
+    print(
+        f"✅ Reference Loaded "
+        f"({len(REFERENCE_DATA)} songs)"
+    )
+
+if __name__ == "__main__":
+
+    print("MAIN START")
+
+    result = analyzeVoice("user_audio/song_1.wav")
+
+    print("RESULT DONE")
+    print(result)
