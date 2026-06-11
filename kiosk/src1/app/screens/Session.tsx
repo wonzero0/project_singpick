@@ -433,6 +433,11 @@ useEffect(() => {
       }
 
       try {
+        // DB 상태 업데이트 (waiting -> playing)
+        await fetch(`/kiosk/start?song_id=${currentSong.id}`, { 
+          method: "POST" 
+        });
+
         await audioRef.current.play();
 
         setStage("playing");

@@ -7,7 +7,6 @@ import {
   Upload,
 } from "lucide-react";
 
-
 export default function Web() {
   const [started, setStarted] = useState(false);
 
@@ -221,7 +220,7 @@ export default function Web() {
         <div className="w-full max-w-lg flex flex-1 flex-col">
           <div className="w-full flex items-center justify-between">
             <span className="text-[15px] font-extrabold text-[#111111]">
-              Sing Pick
+              Sing Pick!
             </span>
 
             <span className="text-xs font-medium text-gray-500">
@@ -231,22 +230,34 @@ export default function Web() {
 
           <div className="flex flex-col items-center justify-center flex-1">
             <img
-              src="/dist/logo.png"
+              src="/logo.png"
               alt="Logo"
-              className="w-52 h-52 object-contain"
+              className="w-44 h-44 object-contain"
             />
           </div>
         </div>
 
         <div className="w-full max-w-lg">
           <button
-            onClick={() =>
-              setStarted(true)
-            }
-            className="w-full rounded-[24px] bg-[#2F7C31] py-4 text-white font-extrabold"
-          >
-            결과보기
-          </button>
+            onClick={() => setStarted(true)}
+            className="
+              w-full
+              rounded-[24px]
+              bg-[#2F7C31]
+              py-5
+              text-green
+              text-xl
+              font-extrabold
+              shadow-lg
+              border-2
+              border-white
+  "
+   style={{
+    boxShadow: "0 8px 25px rgba(31, 85, 116, 0.45)",
+  }}
+>
+  결과보기 →
+</button>
         </div>
       </div>
     );
@@ -256,20 +267,19 @@ export default function Web() {
     <div className="h-screen w-full bg-[#F3F7F0] flex flex-col overflow-hidden">
       
       {/* 헤더 */}
-      <header className="flex-shrink-0 bg-gradient-to-br from-[#F7FBF4]/95 via-white/95 to-[#EAF4E6]/95 px-4 pb-3 pt-4 z-10">
-        <div className="mx-auto flex max-w-lg items-center justify-between rounded-2xl border border-white/80 bg-white/70 px-4 py-3 shadow-sm">
-          <div className="text-[13px] font-bold text-gray-800">
-            ID: {userId}
-          </div>
+<header className="flex-shrink-0 bg-gradient-to-br from-[#F7FBF4]/95 via-white/95 to-[#EAF4E6]/95 px-4 pb-3 pt-4 z-10">
+  <div className="relative mx-auto max-w-lg rounded-3xl border border-[#DDEAD8] bg-white px-4 py-3 shadow-md">
 
-          <h2 className="text-[17px] font-extrabold text-[#111111]">
-            Sing Pick!
-          </h2>
+    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[13px] font-bold text-gray-800">
+      ID: {userId}
+    </div>
 
-          <div className="h-9 w-9 rounded-full bg-[#2F7C31]/10" />
-        </div>
-      </header>
+    <h2 className="text-center text-[26px] font-black tracking-[0.12em] text-[#2F7C31]">
+      SINGPICK!
+    </h2>
 
+  </div>
+</header>
       {/* 중앙 스크롤 */}
       <main
         className="
@@ -279,7 +289,7 @@ export default function Web() {
           touch-pan-y
           px-5
           pt-5
-          pb-40
+          pb-[220px]
         "
         style={{
           WebkitOverflowScrolling:
@@ -290,67 +300,58 @@ export default function Web() {
           
           {tab === "home" ? (
             <>
-              {/* 추천 가수 */}
               <section>
-                <h3 className="text-[13px] font-semibold mb-3 flex items-center gap-2">
-                  <Music className="w-4 h-4 text-[#2F7C31]" />
-                  추천 가수
-                </h3>
+  <h3 className="text-[13px] font-semibold mb-3 flex items-center gap-2">
+    <Music className="w-4 h-4 text-[#2F7C31]" />
+    추천곡 / 추천가수
+  </h3>
 
-                {recommendedArtists.map(
-                  (a, i) => (
-                    <div
-                      key={i}
-                      className="bg-white rounded-2xl p-4 border mb-2.5 flex items-center justify-between"
-                    >
-                      <div>
-                        <h4 className="font-semibold text-[15px]">
-                          {a.name}
-                        </h4>
+  {recommendedSongs.map((s, i) => (
+    <div
+      key={i}
+      className="bg-white rounded-2xl p-4 border mb-3"
+    >
+      <div className="flex items-center justify-between">
+        <div>
+          <h4 className="font-semibold text-[15px]">
+            {s.title}
+          </h4>
 
-                        <p className="text-xs text-gray-500">
-                          {a.genre}
-                        </p>
-                      </div>
+          <p className="text-xs text-gray-500">
+            {s.artist}
+          </p>
+        </div>
 
-                      <span className="text-xs font-bold text-[#2F7C31] bg-green-50 px-2 py-1 rounded-full">
-                        {a.match}%
-                      </span>
-                    </div>
-                  )
-                )}
-              </section>
+        <span className="text-xs font-bold text-[#2F7C31] bg-green-50 px-2 py-1 rounded-full">
+          {s.match}%
+        </span>
+      </div>
+    </div>
+  ))}
 
-              {/* 추천 곡 */}
-              <section>
-                <h3 className="text-[13px] font-semibold mb-3 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-[#2F7C31]" />
-                  추천 곡
-                </h3>
+  {recommendedArtists.map((a, i) => (
+    <div
+      key={i}
+      className="bg-white rounded-2xl p-4 border mb-3"
+    >
+      <div className="flex items-center justify-between">
+        <div>
+          <h4 className="font-semibold text-[15px]">
+            {a.name}
+          </h4>
 
-                {recommendedSongs.map(
-                  (s, i) => (
-                    <div
-                      key={i}
-                      className="bg-white rounded-2xl p-4 border flex items-center justify-between"
-                    >
-                      <div>
-                        <h4 className="font-semibold text-[15px]">
-                          {s.title}
-                        </h4>
+          <p className="text-xs text-gray-500">
+            {a.genre}
+          </p>
+        </div>
 
-                        <p className="text-xs text-gray-500">
-                          {s.artist}
-                        </p>
-                      </div>
-
-                      <span className="text-xs font-bold text-[#2F7C31] bg-green-50 px-2 py-1 rounded-full">
-                        {s.match}%
-                      </span>
-                    </div>
-                  )
-                )}
-              </section>
+        <span className="text-xs font-bold text-[#2F7C31] bg-green-50 px-2 py-1 rounded-full">
+          {a.match}%
+        </span>
+      </div>
+    </div>
+  ))}
+</section>
 
               {/* AI 피드백 */}
               <section className="bg-white rounded-2xl p-5 border">
@@ -405,39 +406,7 @@ export default function Web() {
                 ))}
               </section>
 
-              {/* 업로드 */}
-              <section className="bg-white rounded-2xl p-5 border">
-                <label className="w-full border-2 border-dashed rounded-2xl p-6 flex flex-col items-center cursor-pointer mb-4">
-                  <Upload className="w-8 h-8 text-[#2F7C31] mb-2" />
-
-                  <span className="text-sm text-center break-all">
-                    {selectedFile
-                      ? selectedFile.name
-                      : "녹음 파일 선택"}
-                  </span>
-
-                  <input
-                    type="file"
-                    accept="audio/*"
-                    onChange={
-                      handleFileChange
-                    }
-                    className="hidden"
-                  />
-                </label>
-
-                <button
-                  onClick={
-                    uploadAndAnalyze
-                  }
-                  disabled={loading}
-                  className="w-full bg-[#2F7C31] text-white py-4 rounded-2xl font-bold active:scale-[0.98] transition"
-                >
-                  {loading
-                    ? "분석중..."
-                    : "분석 시작하기"}
-                </button>
-              </section>
+            
             </>
           ) : (
             <div className="bg-white rounded-2xl p-16 border flex items-center justify-center text-gray-400">
@@ -465,14 +434,14 @@ export default function Web() {
           pt-3
         "
       >
-        <div className="mx-auto flex max-w-lg items-center justify-around px-4">
+        <div className="mx-auto flex max-w-lg items-center justify-between px-12">
           
           {/* HOME */}
           <button
             onClick={() =>
               setTab("home")
             }
-            className="flex flex-col items-center justify-center gap-1 py-2"
+            className="flex-1 flex flex-col items-center justify-center gap-1 py-2"
           >
             <Home
               className={`
@@ -505,7 +474,7 @@ export default function Web() {
             onClick={() =>
               setTab("my")
             }
-            className="flex flex-col items-center justify-center gap-1 py-2"
+            className="flex-1 flex flex-col items-center justify-center gap-1 py-2"
           >
             <FileText
               className={`

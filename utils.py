@@ -4,7 +4,7 @@ import base64
 import hashlib
 
 # 팀원이 .env 파일 주면 os.getenv("SECRET_KEY")로 바꾸기
-SECRET_KEY = "my_super_secret_key_for_aes_256!!" 
+SECRET_KEY = "IK6UklXdslaC9CMZlmYljAGuMDIyASwZE+dUB7yVoF8=" 
 
 # 키를 32바이트(256비트)로 맞추는 작업
 def get_key():

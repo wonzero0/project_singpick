@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field, field_validator
 from database import get_db
 import models
 from utils import aes_encrypt
-from routers.kiosk import current_kiosk_state
+from state import current_kiosk_state
 import bcrypt
 from datetime import datetime, timedelta
 

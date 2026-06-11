@@ -1,7 +1,7 @@
 BOOTH_ID = 1
 BOOTH_STATUS_BUSY = "busy"
 BOOTH_STATUS_EMPTY = "empty"
-GUEST_USER_ID = "비회원"
+GUEST_USER_ID = "GUEST"
 
 current_kiosk_state = {
     "status": "none",
@@ -13,9 +13,15 @@ current_kiosk_state = {
 
 
 def get_current_reservation_user_id() -> str:
+    """현재 키오스크 상태에서 예약할 사용자의 ID 반환"""
     if current_kiosk_state["status"] == "member" and current_kiosk_state["user_id"]:
-        return current_kiosk_state["user_id"]
-    return GUEST_USER_ID
+        result = current_kiosk_state["user_id"]
+        print(f"[DEBUG get_current_reservation_user_id] Member: {result}")
+        return result
+    
+    result = GUEST_USER_ID
+    print(f"[DEBUG get_current_reservation_user_id] Guest or None: {result}")
+    return result
 
 
 def set_booth_status(db, status: str):

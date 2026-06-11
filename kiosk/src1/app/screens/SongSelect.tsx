@@ -8,13 +8,18 @@ export default function SongSelect() {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    fetch("/kiosk/led", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ color: "RED" }),
-    }).catch(() => {
-      console.warn("외부 LED RED 명령 전송 실패");
-    });
+    const initLed = async () => {
+      try {
+        await fetch("/kiosk/led", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ color: "RED" }),
+        });
+      } catch (e) {
+        console.warn("외부 LED RED 명령 전송 실패", e);
+      }
+    };
+    initLed();
   }, []);
 
   const finish = async () => {
@@ -184,7 +189,19 @@ export default function SongSelect() {
           </button>
 
           <button
-            onClick={() => navigate("/")}
+            onClick={async () => {
+              try {
+                await fetch("/kiosk/led", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ color: "HOME" }),
+                });
+              } catch (e) {
+                console.warn("외부 LED HOME 명령 전송 실패");
+              } finally {
+                navigate("/");
+              }
+            }}
             className="
               w-[230px]
               h-[72px]

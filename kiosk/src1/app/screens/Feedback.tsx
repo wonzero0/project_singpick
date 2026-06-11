@@ -16,7 +16,7 @@ export function Feedback() {
   const configuredServerIp = import.meta.env.VITE_SERVER_IP;
   const isLocalHost =
     currentUrl.hostname === "localhost" ||
-    currentUrl.hostname === "127.0.0.1";
+    currentUrl.hostname === "192.168.0.236";
 
   const mobileOrigin =
     configuredOrigin ||

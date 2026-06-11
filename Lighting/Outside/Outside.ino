@@ -199,45 +199,38 @@ const char* getStateName(BoothState state) {
 // =========================
 // 시리얼 명령 처리
 // =========================
+// =========================
+// 시리얼 명령 처리 (수정된 버전)
+// =========================
 void updateStateByCommand(const String &command) {
   String cmd = command;
   cmd.trim();
   cmd.toUpperCase();
 
-  if (
-    cmd == "RESERVATION" ||
-    cmd == "RED" ||
-    cmd == "SONG_SELECT"
-  ) {
+  // 1. 예약/RED 상태 설정
+  if (cmd == "RESERVATION" || cmd == "RED" || cmd == "SONG_SELECT") {
     setBoothState(STATE_RESERVATION);
     Serial.println("-> RED LED ON");
     return;
   }
 
-  if (cmd == "RESET") {
+  // 2. 홈으로 돌아가기 또는 리셋 (RESERVATION 상태라도 무조건 수락!)
+  if (cmd == "RESET" || cmd == "HOME") {
     setBoothState(STATE_AVAILABLE);
-    Serial.println("RESET -> GREEN LED ON");
+    Serial.println("-> GREEN LED ON (Forced RESET)");
     return;
   }
 
-  if (
-    cmd == "AVAILABLE" ||
-    cmd == "GREEN" ||
-    cmd == "HOME"
-  ) {
-    if (currentState == STATE_RESERVATION) {
-      Serial.println("IGNORED: GREEN/HOME/AVAILABLE while RESERVATION active");
-      return;
-    }
+  // 3. 일반 사용 가능 상태 설정
+  if (cmd == "AVAILABLE" || cmd == "GREEN") {
+    // RESERVATION 상태일 때의 방어 로직(IGNORED)을 삭제했습니다.
     setBoothState(STATE_AVAILABLE);
     Serial.println("-> GREEN LED ON");
     return;
   }
 
-  if (
-    cmd == "UNAVAILABLE" ||
-    cmd == "BLUE"
-  ) {
+  // 4. 기타
+  if (cmd == "UNAVAILABLE" || cmd == "BLUE") {
     setBoothState(STATE_UNAVAILABLE);
     Serial.println("-> BLUE LED ON");
     return;

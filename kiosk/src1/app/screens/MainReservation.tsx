@@ -117,13 +117,29 @@ export function MainReservation() {
 
   const isReserved = (songId: number) => reservedSongs.some((s) => s.id === songId);
 
-  const handleReserve = (song: Song) => {
+  const handleReserve = async (song: Song) => {
     if (isReserved(song.id)) return;
     if (reservedSongs.length >= remainingSongs) {
       alert("예약 가능한 곡 수를 모두 사용했습니다.");
       return;
     }
-    setReservedSongs((prev) => [...prev, song]);
+
+    try {
+      const res = await fetch("/kiosk/reserve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          booth_id: 1, // 기본 부스 ID
+          song_id: song.id,
+          user_id: userId,
+        }),
+      });
+      if (res.ok) {
+        setReservedSongs((prev) => [...prev, song]);
+      }
+    } catch (error) {
+      console.error("예약 API 호출 실패:", error);
+    }
   };
 
   const handleRemove = (songId: number) => {

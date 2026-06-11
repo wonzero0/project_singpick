@@ -1,14 +1,15 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 import os
 import importlib
 import time
-
+from schemas import RequestReserve
 from utils import aes_encrypt
 import models
 from database import get_db
 from state import (
+    BOOTH_ID,
     BOOTH_STATUS_BUSY,
     BOOTH_STATUS_EMPTY,
     current_kiosk_state,
@@ -47,7 +48,7 @@ def normalize_serial_port(port: str) -> str:
     return port
 
 
-SERIAL_PORT = normalize_serial_port(os.getenv("ARDUINO_SERIAL_PORT", "ttyACM0"))
+SERIAL_PORT = normalize_serial_port(os.getenv("ARDUINO_SERIAL_PORT", "ttyACM1"))
 SERIAL_BAUD = int(os.getenv("ARDUINO_SERIAL_BAUD", "9600"))
 arduino_serial = None
 
@@ -318,3 +319,61 @@ def reset_kiosk(db: Session = Depends(get_db)):
     return {"status": "success", "message": "이용 종료 및 초기화 완료"}
 
 init_arduino()
+
+@router.post("/reserve")
+def reserve_song_endpoint(request: RequestReserve, db: Session = Depends(get_db)):
+    """노래 예약 버튼 클릭 시 호출: DB에 예약 데이터 생성"""
+    from state import get_current_reservation_user_id, BOOTH_ID
+    user_id = get_current_reservation_user_id()
+    
+    print(f"[DEBUG /kiosk/reserve] 예약 시도 - Booth: {BOOTH_ID}, Song: {request.song_id}, User: {user_id}")
+    
+    try:
+        new_reservation = models.Reservation(
+            booth_id=BOOTH_ID,
+            song_id=request.song_id,
+            user_id=user_id,
+            status="waiting"
+        )
+        db.add(new_reservation)
+        db.commit()
+        db.refresh(new_reservation)
+        
+        print(f"[SUCCESS /kiosk/reserve] DB 저장 완료: {BOOTH_ID}:{request.song_id}:{user_id}")
+        return {
+            "status": "success", 
+            "reservation_key": f"{BOOTH_ID}:{request.song_id}:{user_id}"
+        }
+    except Exception as e:
+        db.rollback()
+        print(f"[ERROR /kiosk/reserve] DB 저장 실패: {e}")
+        raise HTTPException(status_code=500, detail=f"예약 중 오류 발생: {str(e)}")
+
+@router.post("/start")
+def start_song_endpoint(song_id: int, db: Session = Depends(get_db)):
+    """노래 시작 버튼 클릭 시 호출: DB 상태를 waiting -> playing으로 변경"""
+    from state import BOOTH_ID
+    
+    print(f"[DEBUG /kiosk/start] 노래 시작 처리 - Booth: {BOOTH_ID}, Song: {song_id}")
+    
+    # 대기 중인 예약 중 가장 먼저 생성된 것을 찾음
+    reservation = db.query(models.Reservation).filter(
+        models.Reservation.booth_id == BOOTH_ID,
+        models.Reservation.song_id == song_id,
+        models.Reservation.status == "waiting"
+    ).order_by(models.Reservation.created_at.asc()).first()
+    
+    if not reservation:
+        print(f"[WARN /kiosk/start] 대기 중인 예약 정보를 찾을 수 없음: Song {song_id}")
+        raise HTTPException(status_code=404, detail="대기 중인 예약 정보가 없습니다.")
+        
+    try:
+        reservation.status = "playing"
+        db.commit()
+        db.refresh(reservation)
+        print(f"[SUCCESS /kiosk/start] 상태 변경 완료: waiting -> playing")
+        return {"status": "success", "message": "노래 시작 상태로 업데이트되었습니다."}
+    except Exception as e:
+        db.rollback()
+        print(f"[ERROR /kiosk/start] DB 업데이트 실패: {e}")
+        raise HTTPException(status_code=500, detail=f"업데이트 중 오류 발생: {str(e)}")

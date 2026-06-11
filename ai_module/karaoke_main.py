@@ -36,7 +36,7 @@ def get_device_id():
 # =========================
 # 서버 / 설정
 # =========================
-SERVER_URL = "http://192.168.0.251:8000"
+SERVER_URL = "http://192.168.0.236:8000"
 USER_ID = "abc"
 
 stop_flag = threading.Event()
@@ -197,7 +197,7 @@ def analyze_song(wav_path):
         # =========================
         # 무음 처리
         # =========================
-        if volume < 0.02:
+        if volume < 0.008:
             print("⚠️ 무음 감지 - 분석 제외")
 
             with lock:
@@ -419,5 +419,4 @@ def run_session():
 
 
 if __name__ == "__main__":
-    run_session()
-
+    run_session() 

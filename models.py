@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime, PrimaryKeyConstraint
 from sqlalchemy.sql import func
 from database import Base
 
@@ -12,9 +12,7 @@ class User(Base):
     user_id = Column(String(50))
     phone = Column(String(255), unique=True, index=True)
     password = Column(String(255))
-
     remaining_songs = Column(Integer, default=0)
-
 
 # =========================
 # 2. 노래방 부스
@@ -25,7 +23,6 @@ class Booth(Base):
     booth_id = Column(Integer, primary_key=True, index=True)
     name = Column(String(50))
     status = Column(String(20), default="empty")
-
 
 # =========================
 # 3. 노래 데이터
@@ -38,47 +35,40 @@ class Song(Base):
     singer = Column(String(50), index=True)
     ky_number = Column(Integer, unique=True)
 
+# =========================
+# 4. 예약 (복합 기본키: booth_id, song_id, user_id)
+# =========================
+# 4. 예약 (복합 기본키: booth_id, song_id, user_id)
+# =========================
 
-# =========================
-# 4. 예약
-# =========================
 class Reservation(Base):
     __tablename__ = "reservations"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String(50), nullable=True) # 회원ID 또는 비회원 문자열 저장
-    booth_id = Column(Integer, default=1)      # 1로 고정
-    song_id = Column(Integer)
-    status = Column(String(20), default="waiting")
+    # 사용자 코멘트에 따라 복합 기본키 (booth_id, song_id, user_id)를 사용하도록 수정합니다.
+    # 만약 'id' 컬럼을 별도의 고유 식별자로 유지하고 싶다면, 'id = Column(Integer, unique=True, autoincrement=True)'와 같이 변경해야 합니다.
+    __table_args__ = (
+        PrimaryKeyConstraint('booth_id', 'song_id', 'user_id'),
+    )
 
+    booth_id = Column(Integer, index=True) # 복합 기본키의 일부로, 성능 향상을 위해 인덱스 추가
+    song_id = Column(Integer, index=True) # 복합 기본키의 일부로, 성능 향상을 위해 인덱스 추가
+    user_id = Column(String(50), index=True) # 복합 기본키의 일부로, 성능 향상을 위해 인덱스 추가
+    status = Column(String(20), default="waiting")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 # =========================
-# 5. AI 분석 결과 (핵심 수정)
+# 5. AI 분석 결과
 # =========================
 class AnalysisResult(Base):
     __tablename__ = "analysis_results"
 
     id = Column(Integer, primary_key=True, index=True)
-
     user_id = Column(String(50), nullable=True)
     filename = Column(String(100))
-
-    # =========================
-    # 🎯 점수 (통합)
-    # =========================
     score = Column(Float)
-
-    # =========================
-    # 📊 분석 값
-    # =========================
     pitch_hz_avg = Column(Float)
     tempo_bpm = Column(Float)
     volume_rms_avg = Column(Float)
-
     feedback = Column(String(500))
     feature_path = Column(String(200))
-
-    created_at = Column(
-        DateTime(timezone=True),
-        server_default=func.now()
-    )
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

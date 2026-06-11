@@ -1,8 +1,10 @@
 import serial
 import platform
+import time
+import os
 
 # 1. 포트 설정
-port = 'COM4' if platform.system() == 'Windows' else '/dev/ttyACM1'
+port = os.getenv("INTERNAL_LED_PORT", 'COM4' if platform.system() == 'Windows' else '/dev/ttyACM0')
 
 # 2. 아두이노 객체를 None으로 초기화
 arduino = None
@@ -19,6 +21,7 @@ except (serial.SerialException, FileNotFoundError):
 def start_led():
     if arduino is not None:
         try:
+            arduino.flush()
             arduino.write(b'PLAY\n')
         except Exception as e:
             print(f"LED 전송 오류: {e}")
@@ -28,6 +31,7 @@ def start_led():
 def stop_led():
     if arduino is not None:
         try:
+            arduino.flush()
             arduino.write(b'STOP\n')
         except Exception as e:
             print(f"LED 전송 오류: {e}")
