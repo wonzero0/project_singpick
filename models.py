@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime, PrimaryKeyConstraint
+from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime, PrimaryKeyConstraint, Text
 from sqlalchemy.sql import func
 from database import Base
 
@@ -57,13 +57,13 @@ class Reservation(Base):
 class AnalysisResult(Base):
     __tablename__ = "analysis_results"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String(50), nullable=True)
-    filename = Column(String(100))
-    score = Column(Float)
-    pitch_hz_avg = Column(Float)
-    tempo_bpm = Column(Float)
-    volume_rms_avg = Column(Float)
-    feedback = Column(String(500))
-    feature_path = Column(String(200))
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(String(100), nullable=True)
+    filename = Column(String(255), nullable=True) # 파일명이 없을 때를 대비해 nullable=True 추가
+    score = Column(Float, nullable=True)          # nullable=True 추가
+    pitch_hz_avg = Column(Float, nullable=True)
+    tempo_bpm = Column(Float, nullable=True)
+    volume_rms_avg = Column(Float, nullable=True)
+    feedback = Column(Text, nullable=True)        # String(500) 대신 Text로 변경 (용량 무제한급)
+    feature_path = Column(String(200), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -182,8 +182,28 @@ def show_qr_page(request: Request):
 
 results_db = {}
 @app.post("/result")
-def save_result(data: dict):
+def save_result(data: dict, db: Session = Depends(get_db)):
     user_id = data.get("user_id", "unknown")
+    
+    # 1. 데이터베이스(MySQL)의 analysis_results 테이블에 물리적으로 저장
+    try:
+        new_analysis = models.AnalysisResult(
+            user_id=user_id,
+            score=data.get("score"),
+            pitch_hz_avg=data.get("pitch"),   # karaoke_main.py의 'pitch' 키 매핑
+            tempo_bpm=data.get("tempo"),     # karaoke_main.py의 'tempo' 키 매핑
+            volume_rms_avg=data.get("volume"),# karaoke_main.py의 'volume' 키 매핑
+            feedback=data.get("feedback")
+        )
+        db.add(new_analysis)
+        db.commit()
+        db.refresh(new_analysis)
+        print(f"[System] {user_id}의 분석 결과가 DB에 성공적으로 저장되었습니다. (ID: {new_analysis.id})")
+    except Exception as e:
+        db.rollback()
+        print(f"[Error] DB 저장 중 오류 발생: {e}")
+
+    # 2. 실시간 조회를 위한 기존 메모리(딕셔너리) 저장 유지
     if user_id not in results_db: results_db[user_id] = []
     results_db[user_id].append(data)
     return {"status": "saved"}

@@ -230,7 +230,7 @@ export default function Web() {
 
           <div className="flex flex-col items-center justify-center flex-1">
             <img
-              src="/logo.png"
+              src="../../../public/logo.png"
               alt="Logo"
               className="w-44 h-44 object-contain"
             />

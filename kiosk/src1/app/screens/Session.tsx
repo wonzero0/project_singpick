@@ -474,7 +474,7 @@ export function Session() {
           </div>
 
           <div className="text-2xl text-slate-300">
-            Below 버튼을 눌러 노래를 시작하세요
+            아래의 버튼을 눌러 노래를 시작하세요
           </div>
 
           <button

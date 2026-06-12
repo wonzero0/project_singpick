@@ -4,7 +4,7 @@ import time
 import os
 
 # 1. 포트 설정
-port = os.getenv("INTERNAL_LED_PORT", 'COM4' if platform.system() == 'Windows' else '/dev/ttyACM0')
+port = os.getenv("INTERNAL_LED_PORT", 'COM4' if platform.system() == 'Windows' else '/dev/ttyACM1')
 
 # 2. 아두이노 객체를 None으로 초기화
 arduino = None

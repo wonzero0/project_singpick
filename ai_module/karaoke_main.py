@@ -39,11 +39,15 @@ def get_device_id():
 # 서버 / 설정
 # =========================
 SERVER_URL_CANDIDATES = [
-    "http://192.168.0.251:8000",
+    "http://192.168.0.236:8000",
     "http://127.0.0.1:8000",
     "http://localhost:8000",
 ]
-USER_ID = "abc"
+USER_ID = os.getenv("USER_ID", "GUEST")
+
+def set_user_id(uid=None):
+    global USER_ID
+    USER_ID = uid if uid else "GUEST"
 
 resolved_server_url = None
 stop_flag = threading.Event()

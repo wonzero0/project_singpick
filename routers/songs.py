@@ -9,9 +9,8 @@ from core import ai_engine
 from models import Reservation 
 from state import current_kiosk_state
 from schemas import RequestReserve
-
 from ai_module.analyze_voice_final import analyzeVoice
-from ai_module.karaoke_scoring import calculate_score
+from ai_module.db_operations import save_analysis_result_to_db
 
 router = APIRouter(prefix="/songs", tags=["Songs"])
 
@@ -81,6 +80,9 @@ async def upload_song(
     user_id: str = Form(...),
     db: Session = Depends(get_db)
 ):
+    # user_id 전처리 (공백 등 제거)
+    user_id = user_id.strip() if user_id else "GUEST"
+
     try:
         if not file.filename:
             raise HTTPException(status_code=400, detail="파일 없음")
@@ -97,96 +99,108 @@ async def upload_song(
         # 1. 오디오 물리 분석 데이터 추출
         result = analyzeVoice(file_path)
 
+        # 안전한 데이터 매핑: AI 분석 결과에서 수치 추출 시 방어적 형변환 및 기본값 할당
         analysis_values = result.get("analysis_values", {})
+        cur_pitch = float(analysis_values.get("pitch_hz_avg", 0.0))
+        cur_tempo = float(analysis_values.get("tempo_bpm", 0.0))
+        cur_volume = float(analysis_values.get("volume_rms_avg", 0.0))
+
         feedback = result.get("feedback", "분석 완료")
         recommendations = result.get("recommendations", [])
         similar_songs = result.get("similar_songs", [])
         similar_artists = result.get("similar_artists", [])
 
-        # 2. 최종 점수 계산
-        score = calculate_score(analysis_values)
+        # 2. 분석 결과 저장 및 AI 피드백 생성
+        # database.py의 설정을 공유하는 주입된 DB 세션(db)을 사용하여 test_db.py와 동일한 환경을 보장합니다.
+        try:
+            new_analysis, score, gemini_feedback, pitch_score_input, tempo_score_input, volume_score_input = save_analysis_result_to_db(
+                db=db,
+                user_id=user_id,
+                filename=file.filename,
+                file_path=file_path,
+                analysis_values=analysis_values,
+                recommendations=recommendations,
+                similar_artists=similar_artists
+            )
 
-        pitch_score_input = min(int(analysis_values.get("pitch_hz_avg", 0.0) / 4), 100) if analysis_values.get("pitch_hz_avg", 0.0) > 0 else 85
-        tempo_score_input = min(int(analysis_values.get("tempo_bpm", 0.0)), 100) if analysis_values.get("tempo_bpm", 0.0) > 0 else 80
-        volume_score_input = min(int(analysis_values.get("volume_rms_avg", 0.0) * 100), 100) if analysis_values.get("volume_rms_avg", 0.0) > 0 else 75
+            if not new_analysis:
+                raise ValueError("AnalysisResult 객체가 생성되지 않았습니다.")
 
-        # 3. 제미나이 AI 보컬 피드백 생성
-        gemini_feedback = ai_engine.get_vocal_feedback(
-            pitch_score=pitch_score_input,
-            tempo_score=tempo_score_input,
-            avg_volume=volume_score_input,
-            pitch_hz_avg=analysis_values.get("pitch_hz_avg", 0.0), 
-            tempo_bpm=analysis_values.get("tempo_bpm", 0.0),       
-            volume_rms_avg=analysis_values.get("volume_rms_avg", 0.0) 
-        )
+            # 분석 데이터 명시적 커밋: 이후 로직에서 에러가 나더라도 분석 데이터 자체는 DB에 안전하게 보존되도록 트랜잭션 분리
+            print(f"[DEBUG] 최종 DB 저장 성공: ID={new_analysis.id}")
 
-        # 4. DB 저장
-        new_analysis = models.AnalysisResult(
-            user_id=user_id,
-            filename=file.filename,
-            score=score,
-            pitch_hz_avg=analysis_values.get("pitch_hz_avg", 0.0),
-            tempo_bpm=analysis_values.get("tempo_bpm", 0.0),
-            volume_rms_avg=analysis_values.get("volume_rms_avg", 0.0),
-            feedback=gemini_feedback, 
-            feature_path=file_path
-        )
-        db.add(new_analysis)
+        except Exception as e:
+            db.rollback()
+            print(f"[ERROR /upload] DB 저장 중 치명적 오류 발생 및 롤백 수행: {str(e)}")
+            raise HTTPException(status_code=500, detail="분석 결과 데이터베이스 저장 실패")
 
-        # reservation_id 형식 파싱 및 상태 완료 업데이트
+        # 4. reservation_id 형식 파싱 및 상태 완료 업데이트
         print(f"[DEBUG /upload] reservation_id={reservation_id}, user_id={user_id}")
         
         try:
-            booth_id, song_id, res_user = reservation_id.split(":")
-            booth_id = int(booth_id)
-            song_id = int(song_id)
-            
-            reservation = db.query(models.Reservation).filter(
-                models.Reservation.booth_id == booth_id,
-                models.Reservation.song_id == song_id,
-                models.Reservation.user_id == res_user,
-                models.Reservation.status != "completed"
-            ).first()
+            if ":" in reservation_id:
+                booth_id, song_id, res_user = reservation_id.split(":")
+                booth_id = int(booth_id)
+                song_id = int(song_id)
+                
+                reservation = db.query(models.Reservation).filter(
+                    models.Reservation.booth_id == booth_id,
+                    models.Reservation.song_id == song_id,
+                    models.Reservation.user_id == res_user,
+                    models.Reservation.status != "completed"
+                ).first()
 
-            if reservation:
-                reservation.status = "completed"
-                print(f"[DEBUG /upload] Reservation status 업데이트 완료: completed")
+                if reservation:
+                    reservation.status = "completed"
+                    db.commit() # 예약 상태 변경 반영
+                    print(f"[DEBUG /upload] Reservation status 업데이트 완료: completed")
+            else:
+                print(f"[WARN /upload] reservation_id 형식이 복합키가 아닙니다: {reservation_id}. 예약을 'completed'로 업데이트하지 않고 건너뜁니다.")
         except Exception as e:
-            print(f"[DEBUG /upload] reservation 처리 중 예외 발생 (무시 가능): {e}")
+            print(f"[DEBUG /upload] reservation 처리 중 예외 발생: {e}")
 
-        db.commit()
-        db.refresh(new_analysis)
+        # 5. 누적 히스토리 및 평균 계산 (실제 유저 환경용 예외 차단 적용)
+        try:
+            all_histories = db.query(models.AnalysisResult).filter(
+                models.AnalysisResult.user_id == user_id
+            ).all()
 
-        # 5. 누적 히스토리 및 평균 계산구조 완벽 복구
-        all_histories = db.query(models.AnalysisResult).filter(
-            models.AnalysisResult.user_id == user_id
-        ).all()
+            # 방어적 히스토리 계산: 첫 방문자이거나 데이터가 없을 경우 현재 곡의 데이터로 대체
+            if len(all_histories) > 0:
+                avg_score = sum(h.score for h in all_histories) / len(all_histories)
+                avg_pitch = sum(h.pitch_hz_avg for h in all_histories) / len(all_histories)
+                avg_tempo = sum(h.tempo_bpm for h in all_histories) / len(all_histories)
+                avg_volume = sum(h.volume_rms_avg for h in all_histories) / len(all_histories)
+            else:
+                avg_score = score
+                avg_pitch = cur_pitch
+                avg_tempo = cur_tempo
+                avg_volume = cur_volume
 
-        if len(all_histories) == 0:
-            raise HTTPException(status_code=500, detail="히스토리 조회 실패")
+            overall_feedback = ""
+            if avg_score >= 90:
+                overall_feedback += "전체적으로 매우 안정적인 가창 능력을 유지하고 있습니다. "
+            elif avg_score >= 75:
+                overall_feedback += "방문할수록 노래 실력이 점차 향상되고 있습니다. "
+            else:
+                overall_feedback += "음정과 박자 안정성 연습이 더 필요합니다. "
 
-        avg_score = sum(h.score for h in all_histories) / len(all_histories)
-        avg_pitch = sum(h.pitch_hz_avg for h in all_histories) / len(all_histories)
-        avg_tempo = sum(h.tempo_bpm for h in all_histories) / len(all_histories)
-        avg_volume = sum(h.volume_rms_avg for h in all_histories) / len(all_histories)
+            if avg_pitch >= 320:
+                overall_feedback += "고음 영역에서 강점을 보입니다."
+            elif avg_pitch >= 250:
+                overall_feedback += "중음 영역이 안정적입니다."
+            else:
+                overall_feedback += "저음 중심의 음역대를 가지고 있습니다."
 
-        overall_feedback = ""
-        if avg_score >= 90:
-            overall_feedback += "전체적으로 매우 안정적인 가창 능력을 유지하고 있습니다. "
-        elif avg_score >= 75:
-            overall_feedback += "방문할수록 노래 실력이 점차 향상되고 있습니다. "
-        else:
-            overall_feedback += "음정과 박자 안정성 연습이 더 필요합니다. "
-
-        if avg_pitch >= 320:
-            overall_feedback += "고음 영역에서 강점을 보입니다."
-        elif avg_pitch >= 250:
-            overall_feedback += "중음 영역이 안정적입니다."
-        else:
-            overall_feedback += "저음 중심의 음역대를 가지고 있습니다."
-
-        top_song = similar_songs[0] if similar_songs else "좋은 날"
-        top_singer = similar_artists[0] if similar_artists else "아이유"
+            top_song = similar_songs[0] if similar_songs else "좋은 날"
+            top_singer = similar_artists[0] if similar_artists else "아이유"
+        except Exception as e:
+            print(f"[DEBUG /upload] 히스토리 및 피드백 계산 중 예외 발생: {e}")
+            all_histories = []
+            avg_score, avg_pitch, avg_tempo, avg_volume = score, cur_pitch, cur_tempo, cur_volume
+            overall_feedback = "현재 가창 데이터를 분석 중입니다."
+            top_song = similar_songs[0] if similar_songs else "정보 없음"
+            top_singer = similar_artists[0] if similar_artists else "정보 없음"
 
         # 6. Web.tsx 맞춤형 데이터 반환
         return {
@@ -221,6 +235,7 @@ async def upload_song(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
 
 # ============================================
 # 사용자 과거 기록 조회

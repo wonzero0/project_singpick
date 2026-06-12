@@ -8,6 +8,7 @@ import time
 from schemas import RequestReserve
 from utils import aes_encrypt
 import models
+import requests
 from database import get_db
 from state import (
     BOOTH_ID,
@@ -49,7 +50,7 @@ def normalize_serial_port(port: str) -> str:
     return port
 
 
-SERIAL_PORT = normalize_serial_port(os.getenv("ARDUINO_SERIAL_PORT", "ttyACM1"))
+SERIAL_PORT = normalize_serial_port(os.getenv("ARDUINO_SERIAL_PORT", "ttyACM0"))
 SERIAL_BAUD = int(os.getenv("ARDUINO_SERIAL_BAUD", "9600"))
 arduino_serial = None
 
@@ -328,35 +329,35 @@ def reserve_song_endpoint(request: RequestReserve, db: Session = Depends(get_db)
     user_id = get_current_reservation_user_id()
     
     print(f"[DEBUG /kiosk/reserve] 예약 시도 - Booth: {BOOTH_ID}, Song: {request.song_id}, User: {user_id}")
+
+    # 타입 안전성 확보
+    safe_user_id = str(user_id) if user_id else "GUEST"
+    safe_booth_id = int(BOOTH_ID)
+    safe_song_id = int(request.song_id)
     
     try:
         new_reservation = models.Reservation(
-            booth_id=BOOTH_ID,
-            song_id=request.song_id,
-            user_id=user_id,
+            booth_id=safe_booth_id,
+            song_id=safe_song_id,
+            user_id=safe_user_id,
             status="waiting"
         )
         db.add(new_reservation)
-        db.commit()
+        db.commit() # 트랜잭션 확정
         db.refresh(new_reservation)
         
-        print(f"[SUCCESS /kiosk/reserve] DB 저장 완료: {BOOTH_ID}:{request.song_id}:{user_id}")
+        print(f"✅ [SUCCESS /kiosk/reserve] DB 저장 완료 (ID: {new_reservation.id})")
         return {
             "status": "success", 
-            "reservation_key": f"{BOOTH_ID}:{request.song_id}:{user_id}"
+            "reservation_key": f"{safe_booth_id}:{safe_song_id}:{safe_user_id}"
         }
     except IntegrityError as e:
         db.rollback()
         print(f"[ERROR /kiosk/reserve] 데이터베이스 무결성 오류 발생: {e}")
-        # 409 Conflict는 중복된 리소스 생성 시 적절한 HTTP 상태 코드입니다.
         raise HTTPException(status_code=409, detail=f"예약 중복 또는 제약 조건 위반: {str(e)}")
-    except SQLAlchemyError as e:
+    except Exception as e:
         db.rollback()
-        print(f"[ERROR /kiosk/reserve] SQLAlchemy 오류 발생: {e}")
-        raise HTTPException(status_code=500, detail=f"데이터베이스 연동 중 오류 발생: {str(e)}")
-    except Exception as e: # 예상치 못한 다른 모든 오류를 처리합니다.
-        db.rollback()
-        print(f"[ERROR /kiosk/reserve] DB 저장 실패: {e}")
+        print(f"❌ [ERROR /kiosk/reserve] DB 저장 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"예약 중 오류 발생: {str(e)}")
 
 @router.post("/start")

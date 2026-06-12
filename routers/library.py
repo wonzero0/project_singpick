@@ -60,29 +60,37 @@ def reserve_song(ky_number: int, db: Session = Depends(get_db)):
     if current_kiosk_state["status"] in ("member", "guest"):
         set_booth_status(db, BOOTH_STATUS_BUSY)
 
+    # 데이터 타입 강제 변환 및 매핑 확인
+    safe_user_id = str(current_user) if current_user else "GUEST"
+    safe_booth_id = int(BOOTH_ID)
+    safe_song_id = int(song.song_id)
+
     new_reservation = models.Reservation(
-        user_id=current_user,
-        booth_id=BOOTH_ID,
-        song_id=song.song_id,
+        user_id=safe_user_id,
+        booth_id=safe_booth_id,
+        song_id=safe_song_id,
         status="waiting"
     )
 
     try:
+        print(f"\n🚀 [DB_RESERVE] 저장 시도: User={safe_user_id}, Booth={safe_booth_id}, Song={safe_song_id}")
         db.add(new_reservation)
-        db.commit()
+        db.commit()  # 명시적 커밋
         db.refresh(new_reservation)
         
-        # 🔍 디버깅: 실제 저장된 데이터
-        print(f"[DEBUG 저장 완료]")
-        print(f"  - reservation.booth_id: {new_reservation.booth_id}")
-        print(f"  - reservation.song_id: {new_reservation.song_id}")
-        print(f"  - reservation.user_id: {new_reservation.user_id}")
-        print(f"  - reservation.status: {new_reservation.status}")
+        print(f"✅ [DB_RESERVE] 저장 성공! 생성된 ID: {new_reservation.id}")
         
-    except SQLAlchemyError as e:
-        print(f"[DEBUG ERROR] {e}")
+    except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail="예약 정보를 DB에 저장하지 못했습니다.")
+        print("\n" + "!"*60)
+        print("❌ [CRITICAL DB ERROR] Reservation 저장 실패!")
+        print(f"Error Message: {str(e)}")
+        print(f"매핑 시도 데이터:")
+        print(f"  - user_id: {safe_user_id}")
+        print(f"  - booth_id: {safe_booth_id}")
+        print(f"  - song_id: {safe_song_id}")
+        print("!"*60 + "\n")
+        raise HTTPException(status_code=500, detail=f"예약 저장 실패: {str(e)}")
 
     return {
         "status": "success",

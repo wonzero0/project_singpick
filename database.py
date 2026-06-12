@@ -1,10 +1,19 @@
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from dotenv import load_dotenv
 
+# .env 파일 로드
+load_dotenv()
 
-# 형식: mysql+pymysql://아이디:비밀번호@주소:포트/데이터베이스이름
-SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:1234@192.168.0.236:3306/singpick_db"
+DB_USER = os.getenv("DB_USER", "root")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "1234")
+DB_HOST = os.getenv("DB_HOST", "192.168.0.236")
+DB_PORT = os.getenv("DB_PORT", "3306")
+DB_NAME = os.getenv("DB_NAME", "singpick_db")
+
+SQLALCHEMY_DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 # 2. 엔진 생성 (파이썬과 DB를 연결하는 자동차 엔진)
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
