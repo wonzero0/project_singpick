@@ -9,255 +9,110 @@ import {
 
 export default function Web() {
   const [started, setStarted] = useState(false);
-
   const [tab, setTab] = useState<"home" | "my">("home");
-
-  const [selectedFile, setSelectedFile] =
-    useState<File | null>(null);
-
-  const [feedback, setFeedback] = useState(
-    "분석 버튼을 눌러 피드백을 확인하세요."
-  );
-
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [feedback, setFeedback] = useState("분석 버튼을 눌러 피드백을 확인하세요.");
   const [loading, setLoading] = useState(false);
+  const [userId, setUserId] = useState<string>("비회원");
 
-  const [userId, setUserId] =
-    useState<string>("비회원");
-
+  // 추천 가수 상태 (데이터 연동 가능하도록 state 유지)
   const [recommendedArtists] = useState([
-    {
-      name: "아이유(IU)",
-      genre: "Ballad",
-      match: 95,
-    },
-    {
-      name: "백예린",
-      genre: "R&B",
-      match: 92,
-    },
-    {
-      name: "태연",
-      genre: "Pop",
-      match: 88,
-    },
+    { name: "비비", genre: "-", match: 82.9 },
+    { name: "헤이즈", genre: "-", match: 80.9 },
+    { name: "최유리", genre: "-", match: 80.6 },
   ]);
 
-  const [recommendedSongs, setRecommendedSongs] =
-    useState([
-      {
-        title: "분석 전",
-        artist: "-",
-        match: 0,
-      },
-    ]);
+  const [recommendedSongs, setRecommendedSongs] = useState([
+    { title: "일기장", artist: "비비", match: 82.9 },
+    { title: "비가 오는 날엔", artist: "헤이즈", match: 80.9 },
+  ]);
 
   const [voiceStats, setVoiceStats] = useState([
-    {
-      label: "음정",
-      value: 0,
-      color: "#66BB6A",
-    },
-    {
-      label: "박자",
-      value: 0,
-      color: "#4CAF50",
-    },
-    {
-      label: "성량",
-      value: 0,
-      color: "#2F7C31",
-    },
+    { label: "음정", value: 85, color: "#66BB6A" },
+    { label: "박자", value: 80, color: "#4CAF50" },
+    { label: "성량", value: 75, color: "#2F7C31" },
   ]);
 
   useEffect(() => {
     let isMounted = true;
-
     async function loadMobileUserInfo() {
       try {
-        const res = await fetch(
-          "/kiosk/current_user",
-          {
-            cache: "no-store",
-          }
-        );
-
+        const res = await fetch("/kiosk/current_user", { cache: "no-store" });
         const data = await res.json();
-
         if (!isMounted) return;
-
         if (data.status === "member") {
           setUserId(data.user_id ?? "회원");
         } else if (data.status === "guest") {
           setUserId("비회원");
         }
       } catch (error) {
-        console.error(
-          "유저 정보 연동 실패:",
-          error
-        );
+        console.error("유저 정보 연동 실패:", error);
       }
     }
-
-    const interval = setInterval(
-      loadMobileUserInfo,
-      500
-    );
-
+    const interval = setInterval(loadMobileUserInfo, 500);
     loadMobileUserInfo();
-
     return () => {
       isMounted = false;
       clearInterval(interval);
     };
   }, []);
 
-  const handleFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = e.target.files?.[0];
+  useEffect(() => {
+    if (!started) return;
+    async function fetchRealtimeAnalysis() {
+      try {
+        const targetId = userId === "비회원" ? "GUEST" : userId;
+        const res = await fetch(`/result?user_id=${targetId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        
+        if (data && data.length > 0) {
+          const latest = data[data.length - 1];
+          if (latest.gemini_feedback) setFeedback(latest.gemini_feedback);
 
-    if (file) {
-      setSelectedFile(file);
-    }
-  };
+          const p = Math.round((latest.pitch || 0) / 4);
+          const t = Math.round(latest.tempo || 0);
+          const v = Math.round((latest.volume || 0) * 100);
 
-  const uploadAndAnalyze = async () => {
-    if (!selectedFile) {
-      alert("파일을 선택해주세요!");
-      return;
-    }
+          setVoiceStats([
+            { label: "음정", value: Math.min(100, p > 0 ? p : 85), color: "#66BB6A" },
+            { label: "박자", value: Math.min(100, t > 0 ? t : 80), color: "#4CAF50" },
+            { label: "성량", value: Math.min(100, v > 0 ? v : 75), color: "#2F7C31" },
+          ]);
 
-    setLoading(true);
-
-    const formData = new FormData();
-
-    formData.append("file", selectedFile);
-    formData.append("reservation_id", "1");
-    formData.append(
-      "reference_song",
-      "No_Doubt"
-    );
-    formData.append("user_bpm", "120");
-
-    try {
-      const response = await fetch(
-        "/songs/upload",
-        {
-          method: "POST",
-          body: formData,
+          if (latest.recommendations && latest.recommendations.length > 1) {
+            const restOfTop5 = latest.recommendations.slice(1, 5).map((item: any, idx: number) => ({
+              title: item.title,
+              artist: item.artist,
+              match: 90 - (idx * 3)
+            }));
+            setRecommendedSongs(restOfTop5);
+          }
         }
-      );
-
-      const result = await response.json();
-
-      if (result.status === "success") {
-        const data = result.data;
-
-        setFeedback(
-          data.feedback || "분석 완료"
-        );
-
-        const p = Math.round(
-          (data.pitch_score || 0) *
-            (data.pitch_score <= 1
-              ? 100
-              : 1)
-        );
-
-        const t = Math.round(
-          (data.tempo_score || 0) *
-            (data.tempo_score <= 1
-              ? 100
-              : 1)
-        );
-
-        const v = Math.round(
-          (data.volume_score || 0) *
-            (data.volume_score <= 1
-              ? 100
-              : 1)
-        );
-
-        setVoiceStats([
-          {
-            label: "음정",
-            value: p,
-            color: "#66BB6A",
-          },
-          {
-            label: "박자",
-            value: t,
-            color: "#4CAF50",
-          },
-          {
-            label: "성량",
-            value: v,
-            color: "#2F7C31",
-          },
-        ]);
-
-        setRecommendedSongs([
-          {
-            title:
-              data.top_song || "-",
-            artist:
-              data.top_singer || "-",
-            match: p,
-          },
-        ]);
+      } catch (error) {
+        console.error("실시간 분석 데이터 수신 실패:", error);
       }
-    } catch (e) {
-      alert("분석 실패");
-    } finally {
-      setLoading(false);
     }
-  };
+    const interval = setInterval(fetchRealtimeAnalysis, 2000); 
+    return () => clearInterval(interval);
+  }, [started, userId]);
 
-  // 시작 화면
   if (!started) {
     return (
       <div className="h-screen bg-[#FAFAFA] flex flex-col items-center px-6 py-6 overflow-hidden">
         <div className="w-full max-w-lg flex flex-1 flex-col">
           <div className="w-full flex items-center justify-between">
-            <span className="text-[15px] font-extrabold text-[#111111]">
-              Sing Pick!
-            </span>
-
-            <span className="text-xs font-medium text-gray-500">
-              👤 {userId} 님
-            </span>
+            <span className="text-[15px] font-extrabold text-[#111111]">Sing Pick!</span>
+            <span className="text-xs font-medium text-gray-500">👤 {userId} 님</span>
           </div>
-
           <div className="flex flex-col items-center justify-center flex-1">
-            <img
-              src="../../../public/logo.png"
-              alt="Logo"
-              className="w-44 h-44 object-contain"
-            />
+            <img src="../../../public/logo.png" alt="Logo" className="w-44 h-44 object-contain" />
           </div>
         </div>
-
         <div className="w-full max-w-lg">
-          <button
-            onClick={() => setStarted(true)}
-            className="
-              w-full
-              rounded-[24px]
-              bg-[#2F7C31]
-              py-5
-              text-green
-              text-xl
-              font-extrabold
-              shadow-lg
-              border-2
-              border-white
-  "
-   style={{
-    boxShadow: "0 8px 25px rgba(31, 85, 116, 0.45)",
-  }}
->
-  결과보기 →
-</button>
+          <button onClick={() => setStarted(true)} className="w-full rounded-[24px] bg-[#2F7C31] py-5 text-white text-xl font-extrabold shadow-lg border-2 border-white" style={{ boxShadow: "0 8px 25px rgba(31, 85, 116, 0.45)" }}>
+            결과보기 →
+          </button>
         </div>
       </div>
     );
@@ -265,241 +120,86 @@ export default function Web() {
 
   return (
     <div className="h-screen w-full bg-[#F3F7F0] flex flex-col overflow-hidden">
-      
-      {/* 헤더 */}
-<header className="flex-shrink-0 bg-gradient-to-br from-[#F7FBF4]/95 via-white/95 to-[#EAF4E6]/95 px-4 pb-3 pt-4 z-10">
-  <div className="relative mx-auto max-w-lg rounded-3xl border border-[#DDEAD8] bg-white px-4 py-3 shadow-md">
+      <header className="flex-shrink-0 bg-gradient-to-br from-[#F7FBF4]/95 via-white/95 to-[#EAF4E6]/95 px-4 pb-3 pt-4 z-10">
+        <div className="relative mx-auto max-w-lg rounded-3xl border border-[#DDEAD8] bg-white px-4 py-3 shadow-md">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[13px] font-bold text-gray-800">ID: {userId}</div>
+          <h2 className="text-center text-[26px] font-black tracking-[0.12em] text-[#2F7C31]">SINGPICK!</h2>
+        </div>
+      </header>
 
-    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[13px] font-bold text-gray-800">
-      ID: {userId}
-    </div>
-
-    <h2 className="text-center text-[26px] font-black tracking-[0.12em] text-[#2F7C31]">
-      SINGPICK!
-    </h2>
-
-  </div>
-</header>
-      {/* 중앙 스크롤 */}
-      <main
-        className="
-          flex-1
-          overflow-y-auto
-          overflow-x-hidden
-          touch-pan-y
-          px-5
-          pt-5
-          pb-[220px]
-        "
-        style={{
-          WebkitOverflowScrolling:
-            "touch",
-        }}
-      >
+      <main className="flex-1 overflow-y-auto overflow-x-hidden touch-pan-y px-5 pt-5 pb-[220px]" style={{ WebkitOverflowScrolling: "touch" }}>
         <div className="mx-auto max-w-lg space-y-6">
-          
           {tab === "home" ? (
             <>
+              {/* 추천곡 Top 5 섹션 */}
               <section>
-  <h3 className="text-[13px] font-semibold mb-3 flex items-center gap-2">
-    <Music className="w-4 h-4 text-[#2F7C31]" />
-    추천곡 / 추천가수
-  </h3>
-
-  {recommendedSongs.map((s, i) => (
-    <div
-      key={i}
-      className="bg-white rounded-2xl p-4 border mb-3"
-    >
-      <div className="flex items-center justify-between">
-        <div>
-          <h4 className="font-semibold text-[15px]">
-            {s.title}
-          </h4>
-
-          <p className="text-xs text-gray-500">
-            {s.artist}
-          </p>
-        </div>
-
-        <span className="text-xs font-bold text-[#2F7C31] bg-green-50 px-2 py-1 rounded-full">
-          {s.match}%
-        </span>
-      </div>
-    </div>
-  ))}
-
-  {recommendedArtists.map((a, i) => (
-    <div
-      key={i}
-      className="bg-white rounded-2xl p-4 border mb-3"
-    >
-      <div className="flex items-center justify-between">
-        <div>
-          <h4 className="font-semibold text-[15px]">
-            {a.name}
-          </h4>
-
-          <p className="text-xs text-gray-500">
-            {a.genre}
-          </p>
-        </div>
-
-        <span className="text-xs font-bold text-[#2F7C31] bg-green-50 px-2 py-1 rounded-full">
-          {a.match}%
-        </span>
-      </div>
-    </div>
-  ))}
-</section>
-
-              {/* AI 피드백 */}
-              <section className="bg-white rounded-2xl p-5 border">
-                <h3 className="text-[13px] font-semibold mb-4">
-                  AI 상세 피드백
+                <h3 className="text-[13px] font-semibold mb-3 flex items-center gap-2">
+                  <Music className="w-4 h-4 text-[#2F7C31]" /> 추천곡 Top 5
                 </h3>
-
-                <p className="text-[14px] text-gray-700 whitespace-pre-wrap">
-                  {loading
-                    ? "분석중..."
-                    : feedback}
-                </p>
-              </section>
-
-              {/* 음성 그래프 */}
-              <section className="bg-white rounded-2xl p-5 border">
-                <h3 className="text-[13px] font-semibold mb-5">
-                  내 음성 그래프
-                </h3>
-
-                {voiceStats.map((s) => (
-                  <div
-                    key={s.label}
-                    className="mb-4"
-                  >
-                    <div className="flex justify-between mb-1">
-                      <span className="text-[13px]">
-                        {s.label}
-                      </span>
-
-                      <span
-                        className="text-[13px] font-bold"
-                        style={{
-                          color: s.color,
-                        }}
-                      >
-                        {s.value}%
-                      </span>
+                {recommendedSongs.map((s, i) => (
+                  <div key={i} className="bg-white rounded-2xl p-4 border mb-3 flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold text-[15px]">{s.title}</h4>
+                      <p className="text-xs text-gray-500">{s.artist}</p>
                     </div>
-
-                    <div className="w-full h-2 bg-gray-100 rounded-full">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${s.value}%`,
-                          backgroundColor:
-                            s.color,
-                        }}
-                      />
-                    </div>
+                    <span className="text-xs font-bold text-[#2F7C31] bg-green-50 px-2 py-1 rounded-full">{s.match}% 일치</span>
                   </div>
                 ))}
               </section>
 
-            
+              {/* 추천가수 Top 5 섹션 */}
+              <section>
+                <h3 className="text-[13px] font-semibold mb-3 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-[#2F7C31]" /> 추천가수 Top 5
+                </h3>
+                {recommendedArtists.map((a, i) => (
+                  <div key={i} className="bg-white rounded-2xl p-4 border mb-3 flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold text-[15px]">{a.name}</h4>
+                    </div>
+                    <span className="text-xs font-bold text-[#2F7C31] bg-green-50 px-2 py-1 rounded-full">{a.match}% 추천</span>
+                  </div>
+                ))}
+              </section>
+
+              {/* AI 피드백 */}
+              <section className="bg-white rounded-2xl p-5 border">
+                <h3 className="text-[13px] font-semibold mb-4">AI 상세 피드백</h3>
+                <p className="text-[14px] text-gray-700 whitespace-pre-wrap">{loading ? "분석중..." : feedback}</p>
+              </section>
+
+              {/* 음성 그래프 */}
+              <section className="bg-white rounded-2xl p-5 border">
+                <h3 className="text-[13px] font-semibold mb-5">내 음성 그래프</h3>
+                {voiceStats.map((s) => (
+                  <div key={s.label} className="mb-4">
+                    <div className="flex justify-between mb-1">
+                      <span className="text-[13px]">{s.label}</span>
+                      <span className="text-[13px] font-bold" style={{ color: s.color }}>{s.value}%</span>
+                    </div>
+                    <div className="w-full h-2 bg-gray-100 rounded-full">
+                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${s.value}%`, backgroundColor: s.color }} />
+                    </div>
+                  </div>
+                ))}
+              </section>
             </>
           ) : (
-            <div className="bg-white rounded-2xl p-16 border flex items-center justify-center text-gray-400">
-              등록예정
-            </div>
+            <div className="bg-white rounded-2xl p-16 border flex items-center justify-center text-gray-400">등록예정</div>
           )}
         </div>
       </main>
 
       {/* 하단 네비게이션 */}
-      <nav
-        className="
-          fixed
-          bottom-0
-          left-0
-          right-0
-          w-full
-          border-t
-          border-[#DDEAD8]
-          bg-white/95
-          backdrop-blur-xl
-          z-[9999]
-          shadow-[0_-8px_24px_rgba(0,0,0,0.08)]
-          pb-[max(env(safe-area-inset-bottom),12px)]
-          pt-3
-        "
-      >
+      <nav className="fixed bottom-0 left-0 right-0 w-full border-t border-[#DDEAD8] bg-white/95 backdrop-blur-xl z-[9999] shadow-[0_-8px_24px_rgba(0,0,0,0.08)] pb-[max(env(safe-area-inset-bottom),12px)] pt-3">
         <div className="mx-auto flex max-w-lg items-center justify-between px-12">
-          
-          {/* HOME */}
-          <button
-            onClick={() =>
-              setTab("home")
-            }
-            className="flex-1 flex flex-col items-center justify-center gap-1 py-2"
-          >
-            <Home
-              className={`
-                h-7 w-7 transition-all duration-200
-                ${
-                  tab === "home"
-                    ? "text-[#2F7C31]"
-                    : "text-gray-400"
-                }
-              `}
-              strokeWidth={2.3}
-            />
-
-            <span
-              className={`
-                text-[12px] transition-all
-                ${
-                  tab === "home"
-                    ? "text-[#2F7C31] font-bold"
-                    : "text-gray-400"
-                }
-              `}
-            >
-              Home
-            </span>
+          <button onClick={() => setTab("home")} className="flex-1 flex flex-col items-center justify-center gap-1 py-2">
+            <Home className={`h-7 w-7 transition-all duration-200 ${tab === "home" ? "text-[#2F7C31]" : "text-gray-400"}`} strokeWidth={2.3} />
+            <span className={`text-[12px] transition-all ${tab === "home" ? "text-[#2F7C31] font-bold" : "text-gray-400"}`}>Home</span>
           </button>
-
-          {/* MY PAGE */}
-          <button
-            onClick={() =>
-              setTab("my")
-            }
-            className="flex-1 flex flex-col items-center justify-center gap-1 py-2"
-          >
-            <FileText
-              className={`
-                h-7 w-7 transition-all duration-200
-                ${
-                  tab === "my"
-                    ? "text-[#2F7C31]"
-                    : "text-gray-400"
-                }
-              `}
-              strokeWidth={2.3}
-            />
-
-            <span
-              className={`
-                text-[12px] transition-all
-                ${
-                  tab === "my"
-                    ? "text-[#2F7C31] font-bold"
-                    : "text-gray-400"
-                }
-              `}
-            >
-              My Page
-            </span>
+          <button onClick={() => setTab("my")} className="flex-1 flex flex-col items-center justify-center gap-1 py-2">
+            <FileText className={`h-7 w-7 transition-all duration-200 ${tab === "my" ? "text-[#2F7C31]" : "text-gray-400"}`} strokeWidth={2.3} />
+            <span className={`text-[12px] transition-all ${tab === "my" ? "text-[#2F7C31] font-bold" : "text-gray-400"}`}>My Page</span>
           </button>
         </div>
       </nav>

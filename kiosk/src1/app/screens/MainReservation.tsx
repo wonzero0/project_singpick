@@ -22,6 +22,33 @@ export function MainReservation() {
   const [lastStatus, setLastStatus] = useState("none");
   const [songsLoading, setSongsLoading] = useState(false);
   const [songsError, setSongsError] = useState("");
+  const [recommendedSongs] = useState([
+  {
+    id: 9001,
+    title: "숲",
+    artist: "최유리",
+  },
+  {
+    id: 9002,
+    title: "잘지내자, 우리",
+    artist: "최유리",
+  },
+  {
+    id: 9003,
+    title: "사건의 지평선",
+    artist: "윤하",
+  },
+  {
+    id: 9004,
+    title: "0+0",
+    artist: "한로로",
+  },
+  {
+    id: 9005,
+    title: "Fine",
+    artist: "태연",
+  },
+]);
 
   useEffect(() => {
     let isMounted = true;
@@ -188,13 +215,83 @@ export function MainReservation() {
         </div>
       </div>
 
+
+
       {/* Song List */}
-      <div className="flex-1 overflow-y-auto overscroll-contain px-8 pt-[200px] pb-[220px]" style={{ WebkitOverflowScrolling: "touch" }}>
-        <div className="max-w-4xl mx-auto space-y-3">
+      <div className="flex-1 overflow-y-auto overscroll-contain px-8 pt-[230px] pb-[220px]" style={{ WebkitOverflowScrolling: "touch" }}>
+        <div className="max-w-4xl mx-auto space-y-6">
+
           {songsLoading && <div className="text-center text-slate-300 py-10">곡 목록을 불러오는 중입니다...</div>}
           {!songsLoading && songsError && <div className="text-center text-red-400 py-10">{songsError}</div>}
           {!songsLoading && !songsError && songs.length === 0 && <div className="text-center text-slate-400 py-10">검색 결과가 없습니다.</div>}
-          
+         {/* ⭐ AI 추천곡 TOP5 */}
+
+{recommendedSongs.map((song) => (
+
+  <div
+    key={`ai-${song.id}`}
+
+    className="
+    bg-white/5
+    backdrop-blur-sm
+    border
+    border-yellow-400
+    rounded-2xl
+    p-6
+    flex
+    items-center
+    justify-between
+  "
+  >
+
+    <div className="flex items-center gap-4 flex-1">
+
+      {/* 일반 노래 리스트랑 똑같은 아이콘 */}
+
+      <div className="w-14 h-14 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center">
+
+        <Music2 size={28} />
+
+      </div>
+
+      <div className="flex-1">
+
+        <div className="text-xl font-medium mb-1">
+
+          {song.title}
+
+        </div>
+
+        <div className="text-slate-400">
+
+          {song.artist}
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <div
+      className="
+      px-6
+      py-3
+      rounded-xl
+      bg-yellow-500/20
+      border
+      border-yellow-400
+      text-yellow-300
+      font-bold
+    "
+    >
+
+      누적 피드백 기반 추천곡
+
+    </div>
+
+  </div>
+
+))}
           {!songsLoading && !songsError && songs.map((song) => (
             <div key={song.id} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 flex items-center justify-between hover:bg-white/10 transition-all group">
               <div className="flex items-center gap-4 flex-1">

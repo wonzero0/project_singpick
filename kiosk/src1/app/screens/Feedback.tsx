@@ -16,7 +16,7 @@ export function Feedback() {
   const isLocalHost =
     currentUrl.hostname === "localhost" ||
     currentUrl.hostname === "127.0.0.1" ||
-    currentUrl.hostname === "192.168.0.236";
+    currentUrl.hostname === "192.168.0.189";
 
   const mobileOrigin =
     configuredOrigin ||

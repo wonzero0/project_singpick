@@ -28,6 +28,8 @@ export function Session() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const reservedSongs: Song[] = location.state?.reservedSongs ?? [];
+  // [요구사항 1] 이전 페이지에서 전달된 실제 유저 ID 확보
+  const userId = location.state?.userId ?? "GUEST";
 
   const [stage, setStage] = useState<Stage>("loading");
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -332,7 +334,8 @@ export function Session() {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            total_songs: reservedSongs.length
+            total_songs: reservedSongs.length,
+            user_id: userId // [요구사항 1] 서버 세션에 실제 유저 ID 등록을 위해 전송
           })
         });
       } catch (error) {
@@ -491,7 +494,8 @@ export function Session() {
                     "Content-Type": "application/json"
                   },
                   body: JSON.stringify({
-                    total_songs: reservedSongs.length
+                    total_songs: reservedSongs.length,
+                    user_id: userId // [요구사항 1] 서버 세션에 실제 유저 ID 등록을 위해 전송
                   })
                 });
 

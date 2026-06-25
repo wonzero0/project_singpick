@@ -39,7 +39,7 @@ def get_device_id():
 # 서버 / 설정
 # =========================
 SERVER_URL_CANDIDATES = [
-    "http://192.168.0.236:8000",
+    "http://192.168.0.189:8000",
     "http://127.0.0.1:8000",
     "http://localhost:8000",
 ]
@@ -292,7 +292,8 @@ def result_collector():
                     "volume": result["volume"],
                     "feedback": result["feedback"],
                     "artist": result["artist"],
-                    "song": result["song"]
+                    "song": result["song"],
+                    "recommendations": result.get("recommendations", [])
                 }
             )
 
@@ -306,7 +307,7 @@ def result_collector():
 # 곡 분석 (핵심)
 # =========================
 def analyze_song(wav_path, result_queue):
-
+    
     print(f"\n🧠 분석 시작: {wav_path}")
 
     try:
@@ -374,6 +375,8 @@ def analyze_song(wav_path, result_queue):
             "artist": top_artist,
             "song": top_song["title"] if top_song else "없음",
             "song_artist": top_song["artist"] if top_song else "없음",
+            "recommendations": recommendations,
+            "similar_artists": similar_artists,
             "is_silent": False
         })
 
