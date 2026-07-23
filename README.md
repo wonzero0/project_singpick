@@ -46,6 +46,12 @@
 
 ---
 
+## 📊 프로젝트 산출물 (Deliverables)
+
+* 📄 **[Sing Pick! 최종 설계서 및 발표 자료 (Notion)](https://catkin-locket-f2d.notion.site/SingPick-3a65b40dd14880d0a031ea6477b84acb?pvs=143)**
+
+---
+
 ## 👥 팀 구성 및 역할
 
 | 이름 | 역할 | 담당 업무 |
